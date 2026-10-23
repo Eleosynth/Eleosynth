@@ -1,0 +1,13 @@
+Eleosynth for Mac (Apple Silicon)
+=================================
+1. Drag Eleosynth into the Applications folder.
+2. The first time, macOS may say it can't check the app for malicious software, because it isn't
+   notarised with a paid Apple certificate yet. Open System Settings > Privacy & Security, scroll down,
+   and choose "Open Anyway" next to Eleosynth. You only do this once.
+3. When you connect a guitar or microphone, allow microphone access.
+
+Plug your guitar into an audio interface, open the Pedalboard tab and press "Connect guitar input".
+Use headphones while monitoring to avoid feedback.
+
+Eleosynth is free software under the GNU GPL v3 or later (see LICENSE.txt). It makes no network requests.
+Website: https://eleosynth.github.io/eleosynth/   Source: https://github.com/Eleosynth/eleosynth

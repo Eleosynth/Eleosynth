@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <style name="AppTheme" parent="@android:style/Theme.Material.NoActionBar">
+    <item name="android:windowBackground">@color/espresso</item>
+    <item name="android:statusBarColor">@color/espresso</item>
+    <item name="android:navigationBarColor">@color/espresso</item>
+    <item name="android:colorAccent">@color/crema</item>
+  </style>
+  <color name="espresso">#140C08</color>
+  <color name="crema">#F2B134</color>
+</resources>

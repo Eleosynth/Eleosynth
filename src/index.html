@@ -1,0 +1,66 @@
+<title>Eleosynth</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Eleosynth: wavetable, analog and tine-piano synth with a guitar pedalboard. Part of the DAWters and Son suite.">
+<!--STYLE-->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <radialGradient id="kface" cx=".38" cy=".32" r=".8"><stop offset="0" stop-color="#5a473a"/><stop offset=".55" stop-color="#2a1c14"/><stop offset="1" stop-color="#120a06"/></radialGradient>
+    <radialGradient id="kblack" cx=".38" cy=".32" r=".8"><stop offset="0" stop-color="#5b5550"/><stop offset=".5" stop-color="#1e1b19"/><stop offset="1" stop-color="#050404"/></radialGradient>
+  </defs>
+</svg>
+<header class="top">
+  <div class="top-row">
+    <div class="brand">
+      <img id="logo" alt="Eleosynth logo: a steel coffee tree with red cherries" width="54" height="54">
+      <div><h1>Eleo<span>synth</span></h1><small>Synth &amp; pedal studio · DAWters and Son</small></div>
+    </div>
+    <div class="bar-group" role="group" aria-label="Sound">
+      <button class="icon-btn" id="prev" type="button" aria-label="Previous sound">‹</button>
+      <button class="patch-btn" id="patch-open" type="button" aria-label="Open the sound browser"><i id="patch-cat">Pads</i><b id="patch-name">Neon Lagoon</b></button>
+      <button class="icon-btn" id="next" type="button" aria-label="Next sound">›</button>
+      <button class="btn small" id="save" type="button">Save</button>
+    </div>
+    <span class="spacer"></span>
+    <div class="bpm"><span class="lbl">Tempo</span><input id="bpm" type="number" min="30" max="300" inputmode="numeric" aria-label="Tempo in BPM"></div>
+    <div class="row" style="align-items:center;gap:8px;flex-wrap:nowrap">
+      <span class="lbl">Voices <span class="num" id="voices">0</span></span>
+      <canvas class="scope" id="scope" aria-label="Output scope"></canvas>
+      <div class="meter" id="m-out" title="Output level"><i></i></div>
+      <div id="master"></div>
+      <button class="rec-btn" id="rec" type="button" aria-pressed="false" aria-label="Record a take"></button>
+      <button class="btn small" id="panic" type="button" title="All notes off">Panic</button>
+    </div>
+  </div>
+  <div class="row" style="align-items:flex-end;flex-wrap:nowrap">
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button class="tab" role="tab" type="button" data-tab="synth" aria-selected="true">Synth</button>
+      <button class="tab" role="tab" type="button" data-tab="fx" aria-selected="false">FX rack<span class="count" id="fx-count">0</span></button>
+      <button class="tab" role="tab" type="button" data-tab="pedals" aria-selected="false">Pedalboard</button>
+      <button class="tab" role="tab" type="button" data-tab="takes" aria-selected="false">Takes &amp; files<span class="count" id="takes-count"></span></button>
+    </nav>
+    <p class="hint" id="patch-desc" style="margin:0 0 8px auto;text-align:right;max-width:52ch"></p>
+  </div>
+</header>
+<main>
+  <div class="view" id="view-synth"></div>
+  <div class="view" id="view-fx" hidden></div>
+  <div class="view" id="view-pedals" hidden></div>
+  <div class="view" id="view-takes" hidden></div>
+</main>
+<div class="dock" role="region" aria-label="Keyboard">
+  <div class="wake" id="wake">
+    <button class="btn gold" id="wake-btn" type="button">Start Eleosynth</button>
+    <p>Browsers start audio only after a tap. Then play the keys, your computer keyboard (A–L), a MIDI keyboard, or your guitar.</p>
+  </div>
+  <div class="wheels">
+    <div class="wheel" id="pw" role="slider" aria-label="Pitch bend"><i></i><span>BEND</span></div>
+    <div class="wheel" id="mw" role="slider" aria-label="Mod wheel"><i></i><span>MOD</span></div>
+  </div>
+  <div class="kctl">
+    <span class="lbl">Octave</span>
+    <div class="row"><button class="icon-btn" id="oct-dn" type="button" aria-label="Octave down">−</button><span class="num" id="oct" style="align-self:center">C3</span><button class="icon-btn" id="oct-up" type="button" aria-label="Octave up">+</button></div>
+    <div id="hold-slot"></div>
+  </div>
+  <div class="keys" id="keys" aria-label="Piano keys"></div>
+</div>
+<!--SCRIPTS-->

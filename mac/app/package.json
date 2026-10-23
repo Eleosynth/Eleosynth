@@ -1,0 +1,10 @@
+{
+  "name": "eleosynth",
+  "productName": "Eleosynth",
+  "version": "0.1.0",
+  "description": "Eleosynth — synth and guitar pedal studio",
+  "main": "main.js",
+  "author": "Josh Wilk",
+  "license": "GPL-3.0-or-later",
+  "homepage": "https://github.com/Eleosynth/eleosynth"
+}

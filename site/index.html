@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Eleosynth — free synth and guitar pedal studio</title>
+<meta name="description" content="Eleosynth is a free, open-source synthesizer and guitar pedalboard: wavetables, a tine electric piano, granular textures, 39 effects and guitar-to-synth tracking. For Mac, Windows, Ubuntu, Android and the browser.">
+<meta property="og:title" content="Eleosynth — synth and guitar pedal studio">
+<meta property="og:description" content="Wavetables, a tine electric piano, granular textures, 39 effects and a guitar pedalboard. Free and open source, part of the DAWters and Son suite.">
+<meta property="og:image" content="img/synth.webp">
+<link rel="icon" href="img/favicon.png">
+<link rel="apple-touch-icon" href="img/icon-192.png">
+<style>
+/* SPDX-License-Identifier: GPL-3.0-or-later — Eleosynth website, "Tostado" design (fonts self-hosted, SIL OFL 1.1) */
+@font-face { font-family: 'Big Shoulders Display'; font-weight: 800; font-display: swap; src: url(fonts/big-shoulders-display-latin-800-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Big Shoulders Display'; font-weight: 900; font-display: swap; src: url(fonts/big-shoulders-display-latin-900-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Archivo'; font-weight: 400; font-display: swap; src: url(fonts/archivo-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Archivo'; font-weight: 600; font-display: swap; src: url(fonts/archivo-latin-600-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Archivo'; font-weight: 700; font-display: swap; src: url(fonts/archivo-latin-700-normal.woff2) format('woff2'); }
+@font-face { font-family: 'Martian Mono'; font-weight: 400; font-display: swap; src: url(fonts/martian-mono-latin-400-normal.woff2) format('woff2'); }
+:root {
+  /* layout: sticky band header; full-bleed espresso sections with a 1180px column */
+  --espresso: #140c08; --char: #0b0604; --roast: #22160f; --roast-2: #2c1d15; --line: #43301f;
+  --steel: #bcb4a9; --cream: #f2e5cf; --muted: #a99586; --gold: #f2b134; --gold-d: #b8811a; --cherry: #d4272f;
+  --display: 'Big Shoulders Display', 'Arial Narrow', sans-serif; --ui: 'Archivo', 'Helvetica Neue', Arial, sans-serif; --mono: 'Martian Mono', ui-monospace, Menlo, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--espresso); color: var(--cream); font: 400 17px/1.55 var(--ui); -webkit-font-smoothing: antialiased; }
+img { max-width: 100%; height: auto; display: block; }
+a { color: var(--gold); }
+:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+h1, h2, h3 { font-family: var(--display); text-transform: uppercase; letter-spacing: .02em; margin: 0; text-wrap: balance; }
+p { margin: 0; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 13px 20px; border-radius: 10px; border: 2px solid var(--steel); color: var(--cream); text-decoration: none; font: 700 13px/1 var(--ui); letter-spacing: .12em; text-transform: uppercase; }
+.btn:hover { border-color: var(--cream); }
+.btn.gold { background: var(--gold); border-color: var(--gold); color: #1d1208; }
+.btn.gold:hover { background: #ffc552; }
+.eyebrow { font: 700 12px var(--ui); letter-spacing: .2em; text-transform: uppercase; color: var(--gold); }
+/* header */
+.top { position: sticky; top: 0; z-index: 20; background: rgba(11,6,4,.92); backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); }
+.top::after { content: ""; display: block; height: 5px; background: linear-gradient(180deg, var(--gold) 0 3px, var(--char) 3px 4px, var(--cherry) 4px 5px); }
+.top .wrap { display: flex; align-items: center; gap: 18px; min-height: 64px; }
+.brand { display: flex; align-items: center; gap: 10px; color: var(--cream); text-decoration: none; }
+.brand img { width: 38px; height: 38px; border-radius: 9px; }
+.brand b { font: 900 26px/1 var(--display); text-transform: uppercase; letter-spacing: .03em; } .brand b span { color: var(--gold); }
+.nav { display: flex; gap: 20px; margin-left: auto; align-items: center; }
+.nav a { color: var(--muted); text-decoration: none; font: 600 14px var(--ui); }
+.nav a:hover { color: var(--cream); }
+.nav .btn { padding: 9px 14px; color: #1d1208; }
+@media (max-width: 860px) { .nav a:not(.btn) { display: none; } }
+/* hero */
+.hero { position: relative; overflow: hidden; background: radial-gradient(ellipse at 72% 30%, #3a2318 0, #170d08 55%, var(--espresso) 80%); border-bottom: 1px solid var(--line); }
+.hero .wrap { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 30px; align-items: center; padding-top: 56px; padding-bottom: 56px; }
+.hero h1 { font-size: clamp(54px, 8.4vw, 112px); line-height: .86; font-weight: 900; }
+.hero h1 em { font-style: normal; color: var(--gold); display: block; }
+.hero .lede { font-size: 20px; color: var(--steel); max-width: 34em; margin-top: 20px; }
+.hero .btns { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+.hero .free { margin-top: 18px; font: 400 13px var(--mono); color: var(--muted); }
+.sculpt { position: relative; }
+.sculpt img { width: 100%; max-width: 520px; margin: 0 auto; filter: drop-shadow(0 30px 40px rgba(0,0,0,.6)); }
+.sculpt::before { content: ""; position: absolute; inset: 12% 12% 6%; background: radial-gradient(circle, rgba(242,177,52,.18), transparent 65%); }
+@media (max-width: 860px) { .hero .wrap { grid-template-columns: 1fr; } .sculpt img { max-width: 340px; } }
+.hero .wrap.specs-wrap { display: block; padding-top: 0; padding-bottom: 0; }
+.specs { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-top: 1px solid var(--line); }
+.specs div { padding: 18px 20px; border-right: 1px solid var(--line); }
+.specs div:last-child { border-right: 0; }
+.specs b { display: block; font: 900 44px/1 var(--display); color: var(--gold); }
+.specs span { font: 600 12px var(--ui); letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+@media (max-width: 760px) { .specs { grid-template-columns: repeat(2, minmax(0, 1fr)); } .specs div { border-bottom: 1px solid var(--line); } }
+/* sections */
+.s { padding: 84px 0; border-bottom: 1px solid var(--line); }
+.s.alt { background: linear-gradient(180deg, #1b110b, var(--espresso)); }
+.head { display: grid; gap: 12px; max-width: 760px; margin-bottom: 38px; }
+.head h2 { font-size: clamp(40px, 5.5vw, 68px); line-height: .92; font-weight: 900; }
+.head p { color: var(--steel); font-size: 18px; }
+.layers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; border-top: 2px solid var(--gold-d); }
+.layer { padding: 22px 22px 26px 0; border-bottom: 1px solid var(--line); }
+.layer h3 { font-size: 26px; font-weight: 800; color: var(--cream); margin-bottom: 8px; }
+.layer h3 small { display: block; font: 700 11px var(--ui); letter-spacing: .18em; color: var(--gold); margin-bottom: 6px; }
+.layer p { color: var(--steel); font-size: 15.5px; }
+@media (max-width: 900px) { .layers { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 600px) { .layers { grid-template-columns: 1fr; } }
+.split { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 44px; align-items: center; }
+@media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+.points { display: grid; gap: 14px; margin-top: 22px; padding: 0; list-style: none; }
+.points li { border-left: 3px solid var(--cherry); padding: 2px 0 2px 14px; color: var(--steel); }
+.points b { color: var(--cream); }
+.tv { border-radius: 14px; overflow: hidden; border: 1px solid #5a4232; box-shadow: 0 0 0 6px #1b110b, 0 0 0 7px #3a281d, 0 30px 60px rgba(0,0,0,.55); background: #000; }
+/* screens */
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.tabs button { background: none; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); padding: 8px 16px; font: 800 17px var(--display); letter-spacing: .06em; text-transform: uppercase; cursor: pointer; }
+.tabs button[aria-selected="true"] { background: var(--gold); border-color: var(--gold); color: #1d1208; }
+.screen { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; align-items: start; }
+.screen.phone { grid-template-columns: minmax(0, 360px) minmax(0, 1fr); }
+.screen .cap h3 { font-size: 30px; font-weight: 800; margin-bottom: 10px; }
+.screen .cap p { color: var(--steel); }
+@media (max-width: 900px) { .screen, .screen.phone { grid-template-columns: 1fr; } }
+/* pool */
+.pool { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 26px 34px; }
+.pool h3 { font-size: 20px; font-weight: 800; color: var(--gold); border-bottom: 1px solid var(--line); padding-bottom: 6px; margin-bottom: 8px; }
+.pool ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+.pool li { display: flex; justify-content: space-between; gap: 10px; font-size: 15px; }
+.pool li span { color: var(--muted); text-align: right; }
+@media (max-width: 900px) { .pool { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 560px) { .pool { grid-template-columns: 1fr; } }
+/* downloads */
+.dl { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 1100px) { .dl { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 700px) { .dl { grid-template-columns: 1fr; } }
+.d { border: 1px solid var(--line); border-top: 4px solid var(--gold); border-radius: 12px; background: var(--roast); padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.d h3 { font-size: 28px; font-weight: 900; display: flex; justify-content: space-between; align-items: baseline; }
+.d h3 small { font: 400 12px var(--mono); color: var(--muted); }
+.d .req { font: 400 12.5px var(--mono); color: var(--muted); }
+.d ol { margin: 0; padding-left: 18px; font-size: 14px; color: var(--steel); display: grid; gap: 4px; }
+.d .btn { justify-content: center; margin-top: auto; }
+.note { margin-top: 18px; color: var(--muted); font-size: 14.5px; max-width: 70ch; }
+/* suite */
+.suite { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 860px) { .suite { grid-template-columns: 1fr; } }
+.app { border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 8px; border: 1px solid var(--line); background: var(--roast); }
+.app .k { font: 700 11px var(--ui); letter-spacing: .18em; text-transform: uppercase; color: var(--muted); }
+.app h3 { font-size: 30px; font-weight: 900; }
+.app p { color: var(--steel); font-size: 15px; }
+.app .btn { align-self: flex-start; margin-top: auto; }
+.app.me { border-color: var(--gold-d); box-shadow: inset 0 0 0 1px var(--gold-d); }
+.app.daw { background: #efe8da; color: #1a1611; border-color: #efe8da; } .app.daw .k, .app.daw p { color: #4a4036; } .app.daw .btn { color: #1a1611; border-color: #1a1611; }
+.app.edk { background: #9e1b22; border-color: #9e1b22; } .app.edk .k, .app.edk p { color: #f4e3d8; } .app.edk .btn { border-color: #f4eee1; }
+/* gift + faq */
+.gift { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 40px; }
+@media (max-width: 860px) { .gift { grid-template-columns: 1fr; } }
+.gift .promise { display: grid; gap: 12px; }
+.gift .promise div { border-left: 3px solid var(--gold); padding: 2px 0 2px 14px; color: var(--steel); }
+.gift .promise b { display: block; font: 800 20px var(--display); text-transform: uppercase; color: var(--cream); letter-spacing: .04em; }
+.faq { display: grid; gap: 10px; max-width: 860px; }
+details { border: 1px solid var(--line); border-radius: 10px; background: var(--roast); padding: 0 18px; }
+summary { cursor: pointer; padding: 15px 0; font: 800 19px var(--display); text-transform: uppercase; letter-spacing: .04em; list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+summary::after { content: '+'; color: var(--gold); }
+details[open] summary::after { content: '–'; }
+details p { padding-bottom: 16px; color: var(--steel); font-size: 15.5px; }
+footer { padding: 40px 0 60px; color: var(--muted); font-size: 14px; }
+footer .wrap { display: flex; gap: 20px; flex-wrap: wrap; justify-content: space-between; align-items: center; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="img/favicon.png" alt="" width="38" height="38"><b>Eleo<span>synth</span></b></a>
+    <nav class="nav" aria-label="Sections"><a href="#synth">The synth</a><a href="#pedals">Pedalboard</a><a href="#screens">Screens</a><a href="#effects">Effects</a><a href="#suite">The suite</a><a href="#faq">FAQ</a><a class="btn gold" href="#get">Download free</a></nav>
+  </div>
+</header>
+<main id="top">
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <div class="eyebrow">Free · open source · part of the DAWters and Son suite</div>
+        <h1 style="margin-top:14px">A synth and a pedalboard, <em>poured into one.</em></h1>
+        <p class="lede">Eleosynth is a deep synthesizer you can also plug your guitar into. Wavetables, a tine electric piano, granular textures and 39 effects on one side; a full pedalboard, a tuner and guitar-to-synth tracking on the other. No price, no sign-up, no tracking.</p>
+        <div class="btns"><a class="btn gold" href="#get">Download free</a><a class="btn" href="app/">Play it in your browser</a></div>
+        <p class="free">Mac · Windows · Ubuntu · Android · browser</p>
+      </div>
+      <div class="sculpt"><img src="img/logo.webp" width="760" height="760" alt="The Eleosynth logo: a coffee tree welded from steel, its branches heavy with red enamel cherries, on a bolted base plate."></div>
+    </div>
+    <div class="wrap specs-wrap"><div class="specs">
+      <div><b>39</b><span>effects</span></div><div><b>49</b><span>factory sounds</span></div><div><b>16</b><span>wavetables</span></div><div><b>6</b><span>tine pianos</span></div><div><b>$0</b><span>forever</span></div>
+    </div></div>
+  </section>
+
+  <section class="s" id="synth">
+    <div class="wrap">
+      <div class="head"><div class="eyebrow">The synth</div><h2>Six sound sources, one voice.</h2><p>Every note can stack two wavetable oscillators, a tine piano, a granular layer, a sub and noise, then run them through a filter that drifts like old hardware.</p></div>
+      <div class="layers">
+        <div class="layer"><h3><small>Oscillators A + B</small>Wavetables</h3><p>Sixteen tables built in, from Crema Basics to Choir Haze, plus your own from any WAV. Up to eight unison voices, and warps for bend, sync, FM and fold. A 3-D view shows the frame you hear.</p></div>
+        <div class="layer"><h3><small>Electric piano</small>Tine piano</h3><p>Stage 73, Suitcase, Bright tines, Felt ballad, Reed piano and Celeste. Play harder and the pickup barks; the bell rings out on top, the damper catches the tail.</p></div>
+        <div class="layer"><h3><small>Granular</small>Aroma</h3><p>Glass air, steam, rain on a tin roof, bowed steel, a choir. Or capture six seconds of your own guitar and play it back from the keys as a cloud of grains.</p></div>
+        <div class="layer"><h3><small>Filter</small>Drifting ladder</h3><p>Saturating 24 and 12 dB ladders that self-oscillate, four state-variable modes and a tuned comb. Drive, key tracking and a live response curve.</p></div>
+        <div class="layer"><h3><small>Modulation</small>Drag to modulate</h3><p>Three envelopes, two LFOs, velocity, mod wheel, random and your guitar's own envelope. Drag a source onto any knob; red rings show what's moving.</p></div>
+        <div class="layer"><h3><small>Play</small>Arp, MIDI, keys</h3><p>An arpeggiator with chord mode and swing, Web MIDI with MIDI learn on every knob, an on-screen keyboard that reads how hard you strike, and your computer keys.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="s alt" id="pedals">
+    <div class="wrap split">
+      <div>
+        <div class="eyebrow">The pedalboard</div>
+        <h2 style="font-size:clamp(40px,5.5vw,68px);line-height:.92;font-weight:900;margin-top:10px">Plug in. Stomp. Play the synth with your guitar.</h2>
+        <ul class="points">
+          <li><b>Any order, any pedal.</b> Build a board from the same 39 effects the synth uses, with footswitches and fifteen ready rigs from Clean Shimmer to Dream-Pop Wall.</li>
+          <li><b>Guitar → Synth.</b> Single notes play the current sound. Bends follow, a new pick retriggers, and the red key shows what it hears.</li>
+          <li><b>Tuner and looper.</b> A tuner that mutes while you tune, and a Loop Station for layering ideas live.</li>
+          <li><b>Nothing plugged in?</b> Four test-guitar recordings run through the board so you can shape a tone first.</li>
+        </ul>
+      </div>
+      <div class="tv"><img src="img/pedals.webp" width="1600" height="1000" alt="The Eleosynth pedalboard: guitar input, tuner and Guitar to Synth panels above a row of stompboxes — Burnt Fuzz, Hyper Brew, Backwash and Cathedral." loading="lazy"></div>
+    </div>
+  </section>
+
+  <section class="s" id="screens">
+    <div class="wrap">
+      <div class="head"><div class="eyebrow">Screens</div><h2>Built like an instrument.</h2></div>
+      <div class="tabs" role="tablist" aria-label="Screens" id="tabs"></div>
+      <div id="screen"></div>
+    </div>
+  </section>
+
+  <section class="s alt" id="effects">
+    <div class="wrap">
+      <div class="head"><div class="eyebrow">The effects pool</div><h2>39 effects. Use any of them on anything.</h2><p>The same pool feeds the synth's FX rack and the pedalboard, and every sound saves its own rack.</p></div>
+      <div class="pool">
+        <div><h3>Dynamics</h3><ul><li>Grounds Gate<span>noise gate</span></li><li>Squeeze<span>compressor</span></li><li>The Lid<span>limiter</span></li><li>Snap<span>transient shaper</span></li><li>Morning Swell<span>volume swell</span></li><li>Percolate<span>tempo pump</span></li></ul></div>
+        <div><h3>Drive</h3><ul><li>Sugar Boost<span>clean boost</span></li><li>Crema Drive<span>overdrive</span></li><li>Burnt Fuzz<span>fuzz</span></li><li>Roastmaster<span>amp + 5 cabinets</span></li><li>Grinder<span>distortion</span></li><li>Bit Mill<span>bitcrusher</span></li><li>Cassette<span>lo-fi tape</span></li><li>Steam Wand<span>exciter</span></li></ul></div>
+        <div><h3>Pitch</h3><ul><li>Double Shot<span>octaver</span></li><li>Shift<span>pitch shifter</span></li><li>Barber Pole<span>frequency shifter</span></li><li>Ring Ding<span>ring modulator</span></li></ul><h3 style="margin-top:22px">Filter &amp; EQ</h3><ul><li>Tone Bar<span>4-band EQ</span></li><li>Wake-Up<span>envelope filter</span></li><li>Pour Over<span>motion filter</span></li><li>Café Voice<span>formant filter</span></li></ul></div>
+        <div><h3>Modulation</h3><ul><li>Steam Chorus<span>chorus</span></li><li>String Café<span>ensemble</span></li><li>Hyper Brew<span>hyper chorus</span></li><li>Swirl<span>phaser</span></li><li>Jet Flanger<span>flanger</span></li><li>Lamp Vibe<span>photocell vibe</span></li><li>Drip Trem<span>tremolo</span></li><li>Suitcase Pan<span>auto-pan</span></li><li>Spin Cabinet<span>rotary speaker</span></li><li>Wide Mug<span>stereo width</span></li></ul></div>
+        <div><h3>Time &amp; space</h3><ul><li>Tape Echo<span>delay</span></li><li>Backwash<span>reverse delay</span></li><li>Cathedral<span>hall, shimmer, freeze</span></li><li>Steel Plate<span>plate reverb</span></li><li>Spring Tank<span>spring reverb</span></li><li>Aroma Cloud<span>granular texture</span></li><li>Loop Station<span>looper</span></li></ul></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="get">
+    <div class="wrap">
+      <div class="head"><div class="eyebrow">Download</div><h2>Free on every screen you own.</h2><p>Version <span id="ver"></span>. Every package is built from the same source, in the open.</p></div>
+      <div class="dl" id="dl"></div>
+      <p class="note">The installers aren't signed with paid certificates yet, so your computer may ask you to confirm the first time; each card shows how. For live guitar input use a desktop app, the Android app, or the web version through its local launcher.</p>
+    </div>
+  </section>
+
+  <section class="s alt" id="suite">
+    <div class="wrap">
+      <div class="head"><div class="eyebrow">The suite</div><h2>Three free studios, one family.</h2><p>Make the beat in Esperanza's Drum Kit, find the sound in Eleosynth, record and master it in DAWters and Son. Same promise across all three: free, open source, no tracking.</p></div>
+      <div class="suite">
+        <div class="app daw"><div class="k">Recording · mixing · mastering</div><h3>DAWters &amp; Son</h3><p>The multitrack studio: unlimited tracks, a console with a knob for every job, mastering recipes and a tuner.</p><a class="btn" href="https://dawters-and-son.github.io/dawters-and-son/" rel="noopener">Meet DAWters &amp; Son</a></div>
+        <div class="app edk"><div class="k">Beats · patterns · arranging</div><h3>Esperanza's Drum Kit</h3><p>A pattern-based beat studio with a channel rack, song sections, 808s and a Feel dial that makes beats play like a person.</p><a class="btn" href="https://esperanza-s-drum-kit.github.io/Esperanza-s-Drum-Kit/" rel="noopener">Meet Esperanza's Drum Kit</a></div>
+        <div class="app me"><div class="k">Synth · keys · guitar pedals</div><h3>Eleosynth</h3><p>You're here: the synthesizer and pedalboard. Its sounds and takes save as plain WAV and JSON, ready to drop into the others.</p><a class="btn gold" href="#get">Download Eleosynth</a></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="gift">
+    <div class="wrap gift">
+      <div class="head" style="margin:0"><div class="eyebrow">The promise</div><h2>An instrument, not a subscription.</h2><p>Eleosynth is free software under the GNU GPL, version 3 or later. You can use it for anything, read every line, change it and share your changes.</p><div style="margin-top:18px"><a class="btn" id="srcLink" href="https://github.com/Eleosynth/eleosynth" rel="noopener">View the source code</a></div></div>
+      <div class="promise">
+        <div><b>No price, no tiers</b>Every feature is in the free version, because there is only one version.</div>
+        <div><b>No sign-up</b>Open it and play. Your sounds and rigs stay on your device.</div>
+        <div><b>No tracking</b>The app makes no network requests at all, and this website loads nothing from anyone else.</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="s" id="faq">
+    <div class="wrap">
+      <div class="head"><div class="eyebrow">Questions</div><h2>Asked and answered.</h2></div>
+      <div class="faq">
+        <details><summary>Can I really plug my guitar in?</summary><p>Yes. Use any audio interface, open the Pedalboard tab and press Connect guitar input. Pick the input channel your guitar is on, set the gain so the meter peaks in the yellow, and use headphones to avoid feedback. In the browser, run the web version through its local launcher so the browser allows the input.</p></details>
+        <details><summary>Does Guitar → Synth play chords?</summary><p>Not yet. It tracks single notes, follows bends and retriggers on each pick, which suits leads, bass lines and pads that bloom from one note. Polyphonic tracking is on the roadmap.</p></details>
+        <details><summary>Is the electric piano sampled?</summary><p>No. It's a model of a tine, a tone bar and a magnetic pickup, so every note responds to how hard you play: the bark, the bell and the decay all change with velocity. That keeps the whole app small enough to run on a phone.</p></details>
+        <details><summary>Can I use my own sounds?</summary><p>Yes. Import a WAV as a wavetable (one cycle, or a long file cut into up to 64 frames), load any audio file into the Aroma granular layer, or capture six seconds of your guitar and play it from the keys.</p></details>
+        <details><summary>Does it work with MIDI keyboards?</summary><p>Yes, in the desktop apps and in Chrome or Edge. Notes, velocity, pitch bend, the mod wheel and the sustain pedal work straight away. Right-click any knob and choose MIDI learn to put it on a controller knob.</p></details>
+        <details><summary>How do I get sounds into DAWters and Son?</summary><p>Press Record, play, and save the take as a 24-bit WAV, then import it into DAWters and Son or load it as a sample in Esperanza's Drum Kit.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
+<footer>
+  <div class="wrap">
+    <a class="brand" href="#top"><img src="img/favicon.png" alt="" width="38" height="38"><b>Eleo<span>synth</span></b></a>
+    <p>Copyright © 2026 Josh Wilk · Free software under the <a href="LICENSE.txt">GNU GPL v3 or later</a> · Part of the DAWters and Son suite</p>
+  </div>
+</footer>
+<script>
+// Where the files live: change these lines if the project moves or for a new release.
+const RELEASES = 'https://github.com/Eleosynth/eleosynth/releases';
+const V = '0.1.0';
+const file = (f) => RELEASES + '/download/v' + V + '/' + f;
+document.getElementById('ver').textContent = V;
+const DL = [
+  { os: 'Mac', req: 'Apple Silicon, macOS 12+', f: 'Eleosynth-' + V + '-arm64.dmg', mb: 116, steps: ['Open the .dmg and drag Eleosynth to Applications.', 'Open it once. If macOS stops it, go to System Settings → Privacy & Security and choose Open Anyway.'] },
+  { os: 'Windows', req: 'Windows 10 or 11, 64-bit', f: 'Eleosynth-' + V + '-Setup-x64.exe', mb: 108, steps: ['Run the installer. No admin password is needed.', 'If SmartScreen appears, choose More info, then Run anyway.'], alt: { f: 'Eleosynth-' + V + '-win-x64-portable.zip', t: 'Or get the portable zip' } },
+  { os: 'Ubuntu', req: 'Ubuntu 22.04+ / Debian, 64-bit', f: 'Eleosynth-' + V + '-amd64.deb', mb: 90, steps: ['Double-click the .deb to install, or run:', 'sudo apt install ./Eleosynth-' + V + '-amd64.deb'] },
+  { os: 'Android', req: 'Android 7+, phone or tablet', f: 'Eleosynth-' + V + '.apk', mb: '<1', steps: ['Download the .apk on your device and open it.', 'Allow “install unknown apps” for your browser when asked.'] },
+  { os: 'Browser', req: 'Chrome or Edge on any computer', href: 'app/', label: 'Open in your browser', mb: 1, steps: ['Nothing to install. Press Start and play.', 'For guitar input, get the web zip and run its launcher.'], alt: { f: 'Eleosynth-' + V + '-web.zip', t: 'Web zip with local launcher' } },
+];
+const dl = document.getElementById('dl');
+DL.forEach((d) => {
+  const card = document.createElement('div'); card.className = 'd';
+  card.innerHTML = '<h3>' + d.os + '<small>' + d.mb + ' MB</small></h3><div class="req">' + d.req + '</div><ol>' + d.steps.map((s) => '<li>' + s.replace(/</g, '&lt;') + '</li>').join('') + '</ol>';
+  const a = document.createElement('a'); a.className = 'btn gold'; a.href = d.href || file(d.f); a.rel = 'noopener'; a.textContent = d.label || 'Download for ' + d.os; card.append(a);
+  if (d.alt) { const b = document.createElement('a'); b.href = file(d.alt.f); b.rel = 'noopener'; b.textContent = d.alt.t; b.style.cssText = 'font-size:13px;text-align:center'; card.append(b); }
+  dl.append(card);
+});
+const SCREENS = [
+  { k: 'synth', t: 'Synth', img: 'synth.webp', h: 'Every layer on one page', p: 'Two wavetable oscillators with a 3-D view of the frame you hear, the tine piano, the Aroma granular layer, sub and noise, the filter curve, modulators and the arpeggiator. Shown here: Neon Lagoon, a wall of detuned saws.' },
+  { k: 'keys', t: 'Tine piano', img: 'keys.webp', h: 'An electric piano that answers back', p: 'Six tine and reed models. Bark drives the pickup harder as you dig in; Pickup moves it off-centre for more growl. Shown: Dream Tines, layered with a slow glass pad.' },
+  { k: 'fx', t: 'FX rack', img: 'fx.webp', h: 'A rack for every sound', p: 'Stack any of the 39 effects in any order. Each sound saves its own rack, so a preset arrives with its chorus, echo and hall already set.' },
+  { k: 'pool', t: 'Effect pool', img: 'pool.webp', h: 'Thirty-nine to choose from', p: 'Dynamics, drive, pitch, filters, modulation and space, each with a coffee-house name and a plain description. Search the pool or browse it by family.' },
+  { k: 'pedals', t: 'Pedalboard', img: 'pedals.webp', h: 'Stompboxes you can rearrange', p: 'Move pedals left and right, switch them with the footswitch, save the board as a rig. The test guitar keeps playing while you tweak.' },
+  { k: 'phone', t: 'Phone', img: 'phone.webp', phone: true, h: 'Fits in your pocket', p: 'Every panel stacks on a phone, the keyboard stays at your thumbs, and the Android app can use your device’s audio input.' },
+];
+const tabs = document.getElementById('tabs'), screen = document.getElementById('screen');
+const show = (s) => {
+  tabs.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', b.dataset.k === s.k ? 'true' : 'false'));
+  screen.className = 'screen' + (s.phone ? ' phone' : '');
+  screen.innerHTML = '<div class="tv"><img src="img/' + s.img + '" alt="' + s.h + '" width="' + (s.phone ? 702 : 1600) + '" height="' + (s.phone ? 1559 : 1000) + '"></div><div class="cap"><h3>' + s.h + '</h3><p>' + s.p + '</p></div>';
+};
+SCREENS.forEach((s) => { const b = document.createElement('button'); b.setAttribute('role', 'tab'); b.dataset.k = s.k; b.textContent = s.t; b.addEventListener('click', () => show(s)); tabs.append(b); });
+show(SCREENS[0]);
+SCREENS.slice(1).forEach((s) => { const i = new Image(); i.src = 'img/' + s.img; });
+</script>
+</body>
+</html>

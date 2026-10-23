@@ -1,0 +1,12 @@
+dist/
+mac/node_modules/
+mac/out/
+win/out/
+linux/out/
+linux/deb-root/
+android/build/
+android/assets/
+android/tools/*.keystore
+_site/
+__pycache__/
+*.hfs
