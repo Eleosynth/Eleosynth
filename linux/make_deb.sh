@@ -44,7 +44,7 @@ D
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Eleosynth
 Upstream-Contact: Josh Wilk
-Source: https://github.com/Eleosynth/eleosynth
+Source: https://github.com/Eleosynth/Eleosynth
 
 Files: *
 Copyright: 2026 Josh Wilk
@@ -81,7 +81,7 @@ Installed-Size: $SIZE
 Depends: libgtk-3-0t64 | libgtk-3-0, libnss3, libasound2t64 | libasound2, libgbm1, libxss1, libxtst6, libatspi2.0-0t64 | libatspi2.0-0, libdrm2, libsecret-1-0, xdg-utils
 Recommends: pulseaudio | pipewire-pulse
 Maintainer: Josh Wilk <noreply@eleosynth.invalid>
-Homepage: https://eleosynth.github.io/eleosynth/
+Homepage: https://eleosynth.github.io/Eleosynth/
 Description: Synthesizer and guitar pedal studio
  Eleosynth combines two wavetable oscillators, a tine electric-piano
  engine, a granular layer, drifting ladder and state-variable filters,

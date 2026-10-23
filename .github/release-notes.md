@@ -7,7 +7,7 @@
 | Windows 10/11 (x64) | `Eleosynth-*-Setup-x64.exe` (per-user, no admin) or the portable zip — SmartScreen: More info › Run anyway |
 | Ubuntu / Debian (amd64) | `Eleosynth-*-amd64.deb` — `sudo apt install ./Eleosynth-*-amd64.deb` |
 | Android 7+ | `Eleosynth-*.apk` |
-| Browser | `Eleosynth-*-web.zip` (page + local launcher for guitar input and MIDI), or play at https://eleosynth.github.io/eleosynth/app/ |
+| Browser | `Eleosynth-*-web.zip` (page + local launcher for guitar input and MIDI), or play at https://eleosynth.github.io/Eleosynth/app/ |
 
 ### In 0.1.0
 - Two wavetable oscillators (16 built-in tables + import your own), a six-model tine electric piano, the Aroma granular layer, sub and noise.

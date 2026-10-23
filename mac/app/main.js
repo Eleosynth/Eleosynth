@@ -55,7 +55,7 @@ function buildMenu() {
       { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }, { type: 'separator' }, { role: 'togglefullscreen' },
     ] },
     { role: 'windowMenu' },
-    { role: 'help', submenu: [{ label: 'Eleosynth Website', click: () => shell.openExternal('https://eleosynth.github.io/eleosynth/') }] },
+    { role: 'help', submenu: [{ label: 'Eleosynth Website', click: () => shell.openExternal('https://eleosynth.github.io/Eleosynth/') }] },
   ];
   Menu.setApplicationMenu(Menu.buildFromTemplate(tpl));
 }
@@ -84,7 +84,7 @@ app.whenReady().then(() => {
   ses.setPermissionRequestHandler((wc, perm, cb) => cb(['media', 'midi', 'midiSysex', 'fullscreen', 'clipboard-sanitized-write', 'speaker-selection'].includes(perm)));
   ses.setPermissionCheckHandler((wc, perm) => ['media', 'midi', 'midiSysex', 'speaker-selection'].includes(perm));
   ses.setDevicePermissionHandler(() => true);
-  app.setAboutPanelOptions({ applicationName: 'Eleosynth', applicationVersion: app.getVersion(), copyright: 'Copyright © 2026 Josh Wilk. Free software under the GNU GPL v3 or later.', website: 'https://eleosynth.github.io/eleosynth/' });
+  app.setAboutPanelOptions({ applicationName: 'Eleosynth', applicationVersion: app.getVersion(), copyright: 'Copyright © 2026 Josh Wilk. Free software under the GNU GPL v3 or later.', website: 'https://eleosynth.github.io/Eleosynth/' });
   buildMenu();
   createWindow();
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });

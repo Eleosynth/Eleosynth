@@ -57,7 +57,7 @@ on-screen keyboard (velocity by where you strike), pitch and mod wheels, compute
 any knob; hold (sustain) pedal; tempo for arps, LFOs and delays; panic.
 
 ## Get it
-Website: https://eleosynth.github.io/eleosynth/ (play in the browser at /app/) · Releases: https://github.com/Eleosynth/eleosynth/releases
+Website: https://eleosynth.github.io/Eleosynth/ (play in the browser at /app/) · Releases: https://github.com/Eleosynth/Eleosynth/releases
 
 | Build | File |
 |---|---|

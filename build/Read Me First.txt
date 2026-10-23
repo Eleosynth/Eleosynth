@@ -10,4 +10,4 @@ Plug your guitar into an audio interface, open the Pedalboard tab and press "Con
 Use headphones while monitoring to avoid feedback.
 
 Eleosynth is free software under the GNU GPL v3 or later (see LICENSE.txt). It makes no network requests.
-Website: https://eleosynth.github.io/eleosynth/   Source: https://github.com/Eleosynth/eleosynth
+Website: https://eleosynth.github.io/Eleosynth/   Source: https://github.com/Eleosynth/Eleosynth
