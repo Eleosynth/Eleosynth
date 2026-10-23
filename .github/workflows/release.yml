@@ -22,6 +22,7 @@ concurrency:
 jobs:
   release:
     runs-on: ubuntu-24.04
+    timeout-minutes: 90
     env:
       TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
@@ -30,7 +31,10 @@ jobs:
         with:
           node-version: 22
       - name: Packaging tools (NSIS, HFS+, Android SDK)
+        timeout-minutes: 15
         run: |
+          # retry stalled mirror downloads instead of hanging
+          echo 'Acquire::Retries "5"; Acquire::http::Timeout "30"; Acquire::https::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/80-retries >/dev/null
           sudo apt-get update
           sudo apt-get install -y nsis hfsprogs cmake zlib1g-dev libbz2-dev libssl-dev zip \
             aapt apksigner zipalign dalvik-exchange libandroid-23-java openjdk-21-jdk-headless
