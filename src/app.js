@@ -6,6 +6,10 @@
   const { h, knob, select, field, toggle, power, menu, toast, overlay, fitCanvas } = KIT;
   const { BYID, INIT, FX, CATS: FXCATS, fxDefaults } = SCHEMA;
   const $ = (s, r = document) => r.querySelector(s);
+  // Running inside DAWters and Son as a plugin: the host hands over its audio context, an output (and input) node,
+  // the tempo and a saved state. MODE 'inst' = an instrument track, 'fx' = the pedalboard as an insert effect.
+  const HOST = window.SUITE_HOST || null, MODE = HOST ? HOST.mode : null;
+  if (HOST) document.documentElement.classList.add('suite', 'suite-' + MODE);
 
   // ------------------------------------------------------------------ state
   const store = {
@@ -28,7 +32,10 @@
   // ------------------------------------------------------------------ audio engine
   let ctx = null, node = null, recNode = null, analyser = null, micSrc = null, micStream = null;
   let previews = null, wtData = null; const aromaBufs = [], aromaOv = [];
-  const post = (m, tr) => { if (node) node.port.postMessage(m, tr || []); };
+  const post = (m, tr) => { if (node) node.port.postMessage(m, tr || []); if (HOST && /^(patch|p|chain|pp|pon|route|table|source)$/.test(m.t)) hostChanged(); };
+  let hostT = 0; const hostChanged = () => { clearTimeout(hostT); hostT = setTimeout(() => HOST.changed && HOST.changed(), 250); };
+  // user audio kept so a host can save it with the song: an imported wavetable (16) and an Aroma file (7)
+  const userAudio = {};
 
   function makeTables() {
     if (wtData) return;
@@ -54,20 +61,29 @@
     if (ctx) { if (ctx.state !== 'running') await ctx.resume(); hideWake(); return; }
     const btn = $('#wake-btn'); if (btn) { btn.disabled = true; btn.textContent = 'Warming up…'; }
     try {
-      ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
       const code = document.getElementById('worklet-src').textContent;
+      if (HOST) { // the host's context: our output goes into its track, its signal (guitar / track audio) comes in
+        ctx = HOST.ctx; await HOST.addModule(ctx, 'eleo', code);
+        node = new AudioWorkletNode(ctx, 'eleo-engine', ENGINE_OPTS());
+        analyser = ctx.createAnalyser(); analyser.fftSize = 1024;
+        node.connect(analyser); node.connect(HOST.output); if (HOST.input) HOST.input.connect(node);
+        node.port.onmessage = (e) => onEngine(e.data);
+      } else {
+      ctx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
       try { await ctx.audioWorklet.addModule(URL.createObjectURL(new Blob([code], { type: 'application/javascript' }))); }
       catch (e) { await ctx.audioWorklet.addModule('data:application/javascript;base64,' + btoa(unescape(encodeURIComponent(code)))); }
-      node = new AudioWorkletNode(ctx, 'eleo-engine', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'discrete' });
+      node = new AudioWorkletNode(ctx, 'eleo-engine', ENGINE_OPTS());
       recNode = new AudioWorkletNode(ctx, 'eleo-rec', { numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2] });
       analyser = ctx.createAnalyser(); analyser.fftSize = 1024;
       node.connect(recNode); recNode.connect(analyser); analyser.connect(ctx.destination);
       node.port.onmessage = (e) => onEngine(e.data); recNode.port.onmessage = (e) => onRec(e.data);
+      }
       makeTables();
       const tabs = wtData.map(t => ({ frames: t.frames, mips: t.mips.map(m => m.slice(0)) }));
       post({ t: 'tables', tables: tabs }, [].concat(...tabs.map(t => t.mips.map(m => m.buffer))));
       sendAll();
-      if (ctx.state !== 'running') await ctx.resume();
+      for (const i in userAudio) sendUserAudio(+i);
+      if (ctx.state !== 'running' && !HOST) await ctx.resume();
       hideWake();
       updateAudioInfo();
       requestAnimationFrame(scopeLoop);
@@ -78,6 +94,12 @@
       if (btn) { btn.disabled = false; btn.textContent = 'Start Eleosynth'; }
       toast('Audio could not start: ' + (err && err.message ? err.message : err));
     }
+  }
+  const ENGINE_OPTS = (init) => ({ numberOfInputs: 1, numberOfOutputs: 1, outputChannelCount: [2], channelCount: 2, channelCountMode: 'explicit', channelInterpretation: 'discrete', processorOptions: init ? { init } : {} });
+  function sendUserAudio(i) {
+    const u = userAudio[i]; if (!u) return;
+    if (i === 16) { const t = WT.fromAudio(u.data); post({ t: 'table', i: 16, tab: { frames: t.frames, mips: t.mips } }, t.mips.map(m => m.buffer)); }
+    else post({ t: 'source', i, buf: u.data.slice(0), sr: u.sr });
   }
   function sendAll() {
     post({ t: 'bpm', v: S.bpm });
@@ -533,6 +555,7 @@
       h('div', { class: 'meter', id: 'm-in', style: 'height:46px', title: 'Input level' }, [h('i')]),
       h('div', { class: 'field' }, [h('span', { class: 'lbl', text: 'Test guitar' }), riff, h('div', { class: 'row', style: 'gap:4px' }, [testBtn, fileBtn])])]));
     inp.body.append(h('p', { class: 'hint', id: 'mic-note', html: 'Plug in through an audio interface. Monitor on headphones. <b>Test guitar</b> plays a DI recording through the board so you can shape a tone without plugging in.' }));
+    if (HOST) { const mn = inp.body.querySelector('#mic-note'); if (mn) mn.innerHTML = MODE === 'fx' ? 'In DAWters and Son this board processes the <b>track it sits on</b>: record your guitar clean and change pedals any time. <b>Test guitar</b> plays a DI riff through it.' : 'In DAWters and Son the guitar comes from <b>the track\'s input</b>: switch on the track\'s input monitor (IN) to play through the board or to drive Guitar → Synth.'; }
     io.append(inp.el);
     // tuner
     const tu = panel('Tuner', { head: [h('span', { class: 'grow' }), toggle('On', S.route.tuner, (v) => { R('tuner', v); if (!v) tunerShow(null); })] });
@@ -621,6 +644,7 @@
     const a = await decodeFile('audio/*'); if (!a) return;
     const d = a.data.length > a.sr * 20 ? a.data.slice(0, a.sr * 20) : a.data;
     let pk = 0; for (const v of d) pk = Math.max(pk, Math.abs(v)); if (pk > 0) for (let i = 0; i < d.length; i++) d[i] *= 0.9 / pk;
+    userAudio[7] = { data: d.slice(0), sr: a.sr, name: a.name };
     aromaOv[7] = overview(d); post({ t: 'source', i: 7, buf: d, sr: a.sr });
     setParam('g.src', 7); if (!S.patch['g.on']) setParam('g.on', 1); drawAroma(); toast('Aroma source: ' + a.name);
   }
@@ -628,6 +652,7 @@
   async function importWavetable(o) {
     const a = await decodeFile('audio/*,.wav'); if (!a) return;
     makeTables();
+    userAudio[16] = { data: a.data.slice(0), sr: a.sr, name: a.name };
     const t = WT.fromAudio(a.data); wtImported = true;
     previews[16] = { frames: t.frames, data: t.preview, name: 'Your Wavetable' };
     post({ t: 'table', i: 16, tab: { frames: t.frames, mips: t.mips } }, t.mips.map(m => m.buffer));
@@ -748,6 +773,7 @@
     fp.body.append(h('div', { class: 'row', style: 'gap:8px' }, [
       h('button', { class: 'btn', type: 'button', text: 'Export this sound', onclick: () => saveFile(S.name.replace(/[^\w\- ]+/g, '') + '.eleosynth.json', JSON.stringify(currentPatchJSON(), null, 1)) }),
       h('button', { class: 'btn', type: 'button', text: 'Import a sound', onclick: importPatch }),
+      h('button', { class: 'btn gold', type: 'button', text: 'Send to DAWters', title: 'Opens DAWters with this sound (and your pedalboard) on a new Eleosynth track', onclick: () => sendToDAW({ kind: 'eleo', name: S.name, state: getState() }) }),
       h('button', { class: 'btn', type: 'button', text: 'Export my library', onclick: () => saveFile('eleosynth-library.json', JSON.stringify({ app: 'Eleosynth', sounds: S.user, rigs: S.userRigs }, null, 1)) })]));
     fp.body.append(h('p', { class: 'hint', text: 'Sounds and rigs you save stay in this browser. Exports are plain JSON you can keep, share or load into the Android and desktop builds later.' }));
     fp.body.append(h('div', { class: 'sub-h', style: 'margin-top:12px', text: 'MIDI' }));
@@ -802,6 +828,7 @@
       } });
       el.append(h('div', { class: 'take' }, [h('div', {}, [h('b', { text: t.name }), h('br'), h('span', { text: dur.toFixed(1) + ' s · ' + t.sr / 1000 + ' kHz · stereo' })]), h('div', { class: 'acts' }, [play,
         h('button', { class: 'btn small gold', type: 'button', text: 'Save WAV', onclick: () => saveFile(t.name.replace(/[^\w\- ]+/g, '').replace(/\s+/g, ' ').trim() + '.wav', wav24(t)) }),
+        h('button', { class: 'btn small', type: 'button', text: 'To DAWters', title: 'Send this take to DAWters as an audio clip', onclick: () => sendToDAW({ kind: 'audio', name: t.name.split(' · ')[0] + ' (' + S.name + ')', audio: { sr: t.sr, ch: [f32ToB64(t.L), f32ToB64(t.R)] } }) }),
         h('button', { class: 'icon-btn', type: 'button', text: '×', 'aria-label': 'Delete ' + t.name, onclick: () => { S.takes = S.takes.filter(x => x !== t); renderTakes(); } })])]));
     }
   }
@@ -822,6 +849,27 @@
     const ch = new DataView(new ArrayBuffer(46)); ch.setUint32(0, 0x02014b50, true); ch.setUint16(4, 20, true); ch.setUint16(6, 20, true); ch.setUint32(16, crc, true); ch.setUint32(20, sz, true); ch.setUint32(24, sz, true); ch.setUint16(28, nm.length, true);
     const cdOff = 30 + nm.length + sz, eo = new DataView(new ArrayBuffer(22)); eo.setUint32(0, 0x06054b50, true); eo.setUint16(8, 1, true); eo.setUint16(10, 1, true); eo.setUint32(12, 46 + nm.length, true); eo.setUint32(16, cdOff, true);
     return new Blob([lh.buffer, nm, data, ch.buffer, nm, eo.buffer]);
+  }
+  // ---- Send to DAWters ----
+  // On the web: opens DAWters (or the tab it opened before) and hands over the idea once it says it's ready.
+  // In the desktop and Android apps, or if DAWters doesn't answer: saves a .dawsuite.json for its File → Import.
+  const DAW_URL = 'https://dawters-and-son.github.io/dawters-and-son/app/';
+  function sendToDAW(payload) {
+    payload = Object.assign({ type: 'dawters-send', v: 1, from: 'eleosynth' }, payload);
+    const fname = (String(payload.name || 'Idea').replace(/[^\w\- ]+/g, '').replace(/\s+/g, ' ').trim() || 'Idea') + '.dawsuite.json';
+    const file = () => saveFile(fname, JSON.stringify(payload)).then(() => toast('In DAWters: File → Import from the suite, and pick ' + fname));
+    if (window.eleoNative || window.EleoAndroid) return file();
+    const origin = new URL(DAW_URL).origin, w = window.open(DAW_URL + '#receive', 'dawters');
+    if (!w) return file();
+    let done = false;
+    const on = (e) => {
+      if (e.source !== w || e.origin !== origin) return;
+      if (e.data === 'dawters-ready') w.postMessage(payload, origin);
+      else if (e.data && e.data.type === 'dawters-got') { done = true; window.removeEventListener('message', on); toast(e.data.ok ? 'Sent to DAWters' : 'DAWters could not take that'); }
+    };
+    window.addEventListener('message', on);
+    toast('Opening DAWters…');
+    setTimeout(() => { if (done) return; window.removeEventListener('message', on); toast('DAWters did not answer, so here is a file to import instead'); file(); }, 45000);
   }
   async function saveFile(name, data) {
     const bytes = typeof data === 'string' ? new TextEncoder().encode(data) : data;
@@ -851,8 +899,8 @@
   // ------------------------------------------------------------------ keyboard dock
   const held = new Map(); // pointerId -> note
   let keyEls = {}, sustainOn = false;
-  function noteOn(n, v) { if (!node) { start(); return; } post({ t: 'on', n, v }); keyMark(n, 'on', true); }
-  function noteOff(n) { post({ t: 'off', n }); keyMark(n, 'on', false); }
+  function noteOn(n, v) { if (!node) { start(); return; } if (HOST && HOST.note) HOST.note(true, n, v); else post({ t: 'on', n, v }); keyMark(n, 'on', true); }
+  function noteOff(n) { if (HOST && HOST.note) HOST.note(false, n, 0); else post({ t: 'off', n }); keyMark(n, 'on', false); }
   function keyMark(n, cls, on) { const k = keyEls[n]; if (k) k.classList.toggle(cls, on); }
   // Key size: white-key width and keyboard height. Auto fits as many keys as the screen allows.
   const KEY_SIZES = { auto: { w: 0, h: 0, label: 'Auto' }, s: { w: 24, h: 112, label: 'Small' }, m: { w: 36, h: 138, label: 'Medium' }, l: { w: 50, h: 172, label: 'Large' }, xl: { w: 68, h: 214, label: 'Extra large' } };
@@ -967,6 +1015,64 @@
     } else if (w === 'r') { const el = document.querySelector(`.knob[data-route="${a}"]`); if (el) el.setNorm(x); }
   }
 
+  // ------------------------------------------------------------------ plugin API (DAWters and Son)
+  // The host drives notes with sample-accurate timestamps, saves our state in its song, and renders us offline
+  // (exports, bounces, freezing) by building a second engine on its offline context with the same sound.
+  const ROUTE_KEYS = ['inGain', 'inCh', 'gtrLevel', 'synthLevel', 'master', 'synthToPedals', 'track', 'trackDry', 'trackOct', 'trackBend', 'trackSens', 'tunerMute', 'guitarOn', 'synthOn'];
+  const f32ToB64 = (f) => { const u = new Uint8Array(f.buffer, f.byteOffset, f.byteLength); let s = ''; for (let i = 0; i < u.length; i += 32768) s += String.fromCharCode.apply(null, u.subarray(i, i + 32768)); return btoa(s); };
+  const b64ToF32 = (s) => { const b = atob(s), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return new Float32Array(u.buffer); };
+  function getState() {
+    const route = {}; for (const k of ROUTE_KEYS) route[k] = S.route[k];
+    return { app: 'Eleosynth', v: 1, mode: MODE, sound: currentPatchJSON(), route,
+      rig: { name: S.rig.name, chain: S.rig.chain.map(u => ({ type: u.type, on: u.on, p: Object.assign({}, u.p) })) },
+      audio: Object.keys(userAudio).map(i => ({ i: +i, sr: userAudio[i].sr, name: userAudio[i].name, data: f32ToB64(userAudio[i].data) })) };
+  }
+  function setState(st) {
+    if (!st) return;
+    for (const a of st.audio || []) { userAudio[a.i] = { data: b64ToF32(a.data), sr: a.sr, name: a.name }; if (a.i === 7) aromaOv[7] = overview(userAudio[7].data); if (node) sendUserAudio(a.i); }
+    if (st.sound) loadPatch(Object.assign({ cat: 'User', fx: [] }, st.sound, { p: st.sound.p || {} }));
+    if (st.rig) loadRig(st.rig);
+    if (st.route) { Object.assign(S.route, st.route); post({ t: 'route', r: S.route }); const pv = $('#view-pedals'); if (pv) { pv.innerHTML = ''; buildPedalboard(pv); } }
+  }
+  async function renderInto(octx, o) {
+    makeTables();
+    await HOST.addModule(octx, 'eleo', document.getElementById('worklet-src').textContent);
+    const init = [{ t: 'tables', tables: wtData.map(t => ({ frames: t.frames, mips: t.mips })) }];
+    aromaBufs.forEach((b, i) => { if (b) init.push({ t: 'source', i, buf: b, sr: 48000 }); });
+    for (const i in userAudio) {
+      const u = userAudio[i];
+      if (+i === 16) { const t = WT.fromAudio(u.data); init.push({ t: 'table', i: 16, tab: { frames: t.frames, mips: t.mips } }); }
+      else init.push({ t: 'source', i: +i, buf: u.data, sr: u.sr });
+    }
+    init.push({ t: 'bpm', v: o.bpm || S.bpm }, { t: 'patch', p: S.patch }, { t: 'chain', w: 'fx', chain: S.fx }, { t: 'chain', w: 'ped', chain: S.rig.chain },
+      { t: 'route', r: Object.assign({}, S.route, { tuner: false, testOn: false, guitarOn: !!o.input && S.route.guitarOn }) });
+    if (o.events && o.events.length) init.push({ t: 'ev', ev: o.events });
+    const n = new AudioWorkletNode(octx, 'eleo-engine', ENGINE_OPTS(init));
+    if (o.input) o.input.connect(n);
+    n.connect(o.output);
+    return n;
+  }
+  function pluginDefaults() {
+    if (MODE === 'fx') Object.assign(S.route, { synthOn: false, guitarOn: true, inCh: 0, inGain: 1, gtrLevel: 1, master: 1, testOn: false, tuner: false, synthToPedals: false });
+    else Object.assign(S.route, { synthOn: true, guitarOn: true, testOn: false, tuner: false, master: 0.8 });
+  }
+  if (HOST) {
+    window.SUITE_PLUGIN = {
+      getState, setState, render: renderInto,
+      schedule(ev) { post({ t: 'ev', ev }); },
+      clear() { post({ t: 'clear' }); },
+      note(on, n, v) { post(on ? { t: 'on', n, v } : { t: 'off', n }); keyMark(n, 'on', on); },
+      sustain(v) { post({ t: 'sustain', v }); },
+      bend(v) { post({ t: 'bend', v }); }, wheel(v) { post({ t: 'wheel', v }); },
+      allOff() { post({ t: 'allOff' }); document.querySelectorAll('.key.on').forEach(k => k.classList.remove('on')); },
+      bpm(v) { S.bpm = v; post({ t: 'bpm', v }); },
+      name() { return MODE === 'fx' ? 'Pedalboard · ' + S.rig.name : S.name; },
+      show(tab) { const t = document.querySelector(`.tab[data-tab="${tab}"]`); if (t) t.click(); requestAnimationFrame(redrawAll); },
+      redraw() { requestAnimationFrame(() => { buildKeys(); redrawAll(); }); },
+      dispose() { try { node.disconnect(); } catch (e) { /* gone */ } try { if (HOST.input) HOST.input.disconnect(node); } catch (e) { /* gone */ } node = null; },
+    };
+  }
+
   // ------------------------------------------------------------------ boot
   function boot() {
     $('#logo').src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(document.getElementById('logo-src').textContent)));
@@ -1008,6 +1114,14 @@
     const last = store.get('last', null), first = (last && allPatches().find(p => p.name === last.name)) || PRESETS.PATCHES[0];
     loadPatch(first);
     loadRig(PRESETS.RIGS[0]);
+    if (HOST) {
+      pluginDefaults();
+      if (HOST.state) setState(HOST.state);
+      if (MODE === 'fx') document.querySelector('.tab[data-tab="pedals"]').click();
+      window.SUITE_PLUGIN.ready = start().then(() => window.SUITE_PLUGIN);
+      if (HOST.ready) window.SUITE_PLUGIN.ready.then(HOST.ready);
+      return;
+    }
     setTimeout(() => { makeTables(); }, 60);
     initMIDI();
     if (window.eleoNative && window.eleoNative.onMenu) window.eleoNative.onMenu((cmd) => {

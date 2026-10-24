@@ -9,7 +9,11 @@
 | Android 7+ | `Eleosynth-*.apk` |
 | Browser | `Eleosynth-*-web.zip` (page + local launcher for guitar input and MIDI), or play at https://eleosynth.github.io/Eleosynth/app/ |
 
-### New in 0.1.1
+### New in 0.2.0
+- **Inside DAWters and Son 2.4:** Eleosynth now runs as an instrument track in DAWters, on the song's clock and sample-accurate in exports, and its guitar pedalboard runs as an insert on any DAWters audio track (record clean, change the pedals later).
+- **Send to DAWters** (Takes & files): sends this sound, with your pedalboard, to a new Eleosynth track in DAWters, or any take as an audio clip. On the web it opens DAWters for you; the desktop and Android apps save a `.dawsuite.json` to import there.
+
+### In 0.1.1
 - **Bind keys:** a switch beside the keyboard ties your computer keyboard to the on-screen keys. Each bound key shows its letter (A W S E D F T G Y H U J K O L P ; ') and the letters follow the octave buttons and Z / X. Unbind it and typing never plays notes.
 - **Key size:** Keys menu with Auto, Small, Medium, Large and Extra large. Bigger keys are wider and taller, so they're easier to hit on a phone. The choice is remembered.
 

@@ -11,7 +11,7 @@
 #   android: see android/build-apk.sh (release key from ELEO_KEYSTORE + ELEO_KS_PASS)
 set -e
 cd "$(dirname "$0")"
-V=0.1.1
+V=0.2.0
 python3 build.py
 rm -rf dist/web && mkdir -p dist/web && cp dist/eleosynth.html web/* LICENSE dist/web/ && rm -rf dist/web/__pycache__
 python3 tools/make_web_zip.py dist/web "dist/Eleosynth-$V-web.zip"

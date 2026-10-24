@@ -1,13 +1,22 @@
 # Eleosynth — synth & pedal studio
 
 **Free software.** Copyright (C) 2026 Josh Wilk. GNU General Public License, version 3 or (at your option) any later
-version — see [LICENSE](LICENSE). No price, no tiers, no sign-up, no tracking: the app makes no network requests.
+version — see [LICENSE](LICENSE). No price, no tiers, no sign-up, no tracking: the app makes no network requests (Send to DAWters opens the DAWters page, only when you choose it).
 
 Part of the **DAWters and Son** suite (DAWters and Son · Esperanza's Drum Kit · Eleosynth). A deep synthesizer
 inspired by the reach of Serum (wavetables), Diva (drifting analog filters) and Omnisphere (layers and granular
 texture), fused with a guitar pedalboard you play through live. Design: **"Tostado"**, a roaster's bench at night,
 with a welded-steel coffee tree hung with red cherries as the logo. One codebase (plain HTML + Web Audio + one
 AudioWorklet, no libraries, works offline).
+
+## 0.2.0 — inside DAWters
+
+- **An instrument in DAWters and Son 2.4:** Eleosynth runs on a DAWters instrument track, on the song's clock
+  (sample-accurate live and in exports), and the guitar pedalboard runs as an insert on any DAWters audio track:
+  record the guitar clean, hear it through the pedals, change the rig later.
+- **Send to DAWters** (Takes & files): this sound and your pedalboard go to a new Eleosynth track, and any take
+  goes over as an audio clip. On the web it opens DAWters; the desktop and Android apps save a `.dawsuite.json`
+  for DAWters' File → Import from the suite.
 
 ## MVP 0.1
 
@@ -61,11 +70,11 @@ Website: https://eleosynth.github.io/Eleosynth/ (play in the browser at /app/) �
 
 | Build | File |
 |---|---|
-| Mac (Apple Silicon) | `Eleosynth-0.1.1-arm64.dmg` — Electron 45 shell, ad-hoc signed: first launch needs *Open Anyway* |
-| Windows 10/11 (x64) | `Eleosynth-0.1.1-Setup-x64.exe` (per-user NSIS installer, Start-menu Pedalboard shortcut) and `-win-x64-portable.zip` |
-| Ubuntu / Debian (amd64) | `Eleosynth-0.1.1-amd64.deb` — launcher with a Pedalboard action, hicolor icons, AppArmor userns profile |
-| Android 7.0+ | `Eleosynth-0.1.1.apk` — WebView shell, package `com.wilk.eleosynth`, no INTERNET permission, saves to `Music/Eleosynth/` |
-| Web | `Eleosynth-0.1.1-web.zip` — the page plus a local launcher (`http://localhost:8752`) for guitar input and MIDI |
+| Mac (Apple Silicon) | `Eleosynth-0.2.0-arm64.dmg` — Electron 45 shell, ad-hoc signed: first launch needs *Open Anyway* |
+| Windows 10/11 (x64) | `Eleosynth-0.2.0-Setup-x64.exe` (per-user NSIS installer, Start-menu Pedalboard shortcut) and `-win-x64-portable.zip` |
+| Ubuntu / Debian (amd64) | `Eleosynth-0.2.0-amd64.deb` — launcher with a Pedalboard action, hicolor icons, AppArmor userns profile |
+| Android 7.0+ | `Eleosynth-0.2.0.apk` — WebView shell, package `com.wilk.eleosynth`, no INTERNET permission, saves to `Music/Eleosynth/` |
+| Web | `Eleosynth-0.2.0-web.zip` — the page plus a local launcher (`http://localhost:8752`) for guitar input and MIDI |
 
 ## Build
 ```
@@ -75,7 +84,7 @@ sh build-all.sh              # -> every package in dist/ (see the header of buil
 sh tools/assemble_site.sh    # -> _site/ (website + web app), published by .github/workflows/pages.yml
 ```
 Releases: bump `V=` in `build-all.sh`, `mac/app/package.json` and `android/AndroidManifest.xml`, then push a tag
-(`git tag v0.1.1 && git push origin v0.1.1`) or start **Release** from the Actions tab. The APK is included only when
+(`git tag v0.2.0 && git push origin v0.2.0`) or start **Release** from the Actions tab. The APK is included only when
 the repository secrets `ELEO_KEYSTORE_B64` and `ELEO_KS_PASS` hold the release key; the key is never in the repository.
 
 ## Test

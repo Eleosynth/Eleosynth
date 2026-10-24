@@ -1072,8 +1072,10 @@ function envCoefs(a, d, s, r) {
 
 // ---------------------------------------------------------------- the processor
 class EleoEngine extends AudioWorkletProcessor {
-  constructor() {
+  constructor(options) {
     super();
+    // notes scheduled by a host (DAWters and Son): [frame, on(1)/off(0), note, velocity], sorted by frame
+    this.evq = []; this.evi = 0;
     this.P = {}; this.dirty = true; this.tables = []; this.sources = []; this.srcRate = [];
     this.voices = []; for (let i = 0; i < 16; i++) this.voices.push(new Voice(i));
     this.bpm = 112; this.wheel = 0; this.pb = 0; this.sustain = false; this.sustained = new Set();
@@ -1092,10 +1094,15 @@ class EleoEngine extends AudioWorkletProcessor {
     this.lim = 0.97; this.dcL = 0; this.dcR = 0; this.dcxL = 0; this.dcxR = 0;
     this.lfoG = [0, 0];
     this.port.onmessage = (e) => this.onMsg(e.data);
+    // a host can hand over everything up front (offline renders: messages could arrive after rendering starts)
+    const po = (options && options.processorOptions) || {};
+    if (po.init) for (const m of po.init) this.onMsg(m);
   }
 
   onMsg(m) {
     switch (m.t) {
+      case 'ev': this.evq = this.evq.slice(this.evi).concat(m.ev).sort((a, b) => a[0] - b[0]); this.evi = 0; break;
+      case 'clear': this.evq = []; this.evi = 0; for (const n of this.held.slice()) this.keyOff(n); this.sustained.clear(); this.arpStop(); for (const vc of this.voices) if (vc.active && vc.gate && vc !== this.voices[15]) this.release(vc); break;
       case 'tables': this.tables = m.tables; break;
       case 'table': this.tables[m.i] = m.tab; break;
       case 'source': this.sources[m.i] = m.buf; this.srcRate[m.i] = (m.sr || SR) / SR; break;
@@ -1601,8 +1608,11 @@ class EleoEngine extends AudioWorkletProcessor {
 
     // --- synth
     const sL = this.sL, sR = this.sR; sL.fill(0, 0, n); sR.fill(0, 0, n);
+    const f0 = currentFrame, q = this.evq;
     for (let off = 0; off < n; off += 32) {
       const m = Math.min(32, n - off);
+      // host-scheduled notes for this 32-frame slice (within 0.7 ms of their frame); late ones play at once
+      while (this.evi < q.length && q[this.evi][0] < f0 + off + m) { const e = q[this.evi++]; if (e[1]) this.keyOn(e[2], e[3]); else this.keyOff(e[2]); }
       this.arpTick(m);
       for (const vc of this.voices) if (vc.active) this.renderVoice(vc, sL, sR, off, m);
     }
