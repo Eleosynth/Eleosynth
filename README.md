@@ -53,7 +53,7 @@ Aroma Cloud (granular texture), Loop Station (pedalboard looper).
 ### Everything else
 49 factory sounds in 8 categories (Pads, Keys, Leads, Bass, Plucks, Arps, Textures, Guitar synth), loudness-matched;
 Surprise me; save / export / import sounds and rigs; record takes from the master output and save 24-bit WAV;
-on-screen keyboard (velocity by where you strike), pitch and mod wheels, computer keys, Web MIDI with MIDI learn on
+on-screen keyboard (velocity by where you strike) with five key sizes for phones and tablets, pitch and mod wheels, computer keys bound to the on-screen keys (toggle, with letters shown on the keys), Web MIDI with MIDI learn on
 any knob; hold (sustain) pedal; tempo for arps, LFOs and delays; panic.
 
 ## Get it
@@ -61,11 +61,11 @@ Website: https://eleosynth.github.io/Eleosynth/ (play in the browser at /app/) �
 
 | Build | File |
 |---|---|
-| Mac (Apple Silicon) | `Eleosynth-0.1.0-arm64.dmg` — Electron 45 shell, ad-hoc signed: first launch needs *Open Anyway* |
-| Windows 10/11 (x64) | `Eleosynth-0.1.0-Setup-x64.exe` (per-user NSIS installer, Start-menu Pedalboard shortcut) and `-win-x64-portable.zip` |
-| Ubuntu / Debian (amd64) | `Eleosynth-0.1.0-amd64.deb` — launcher with a Pedalboard action, hicolor icons, AppArmor userns profile |
-| Android 7.0+ | `Eleosynth-0.1.0.apk` — WebView shell, package `com.wilk.eleosynth`, no INTERNET permission, saves to `Music/Eleosynth/` |
-| Web | `Eleosynth-0.1.0-web.zip` — the page plus a local launcher (`http://localhost:8752`) for guitar input and MIDI |
+| Mac (Apple Silicon) | `Eleosynth-0.1.1-arm64.dmg` — Electron 45 shell, ad-hoc signed: first launch needs *Open Anyway* |
+| Windows 10/11 (x64) | `Eleosynth-0.1.1-Setup-x64.exe` (per-user NSIS installer, Start-menu Pedalboard shortcut) and `-win-x64-portable.zip` |
+| Ubuntu / Debian (amd64) | `Eleosynth-0.1.1-amd64.deb` — launcher with a Pedalboard action, hicolor icons, AppArmor userns profile |
+| Android 7.0+ | `Eleosynth-0.1.1.apk` — WebView shell, package `com.wilk.eleosynth`, no INTERNET permission, saves to `Music/Eleosynth/` |
+| Web | `Eleosynth-0.1.1-web.zip` — the page plus a local launcher (`http://localhost:8752`) for guitar input and MIDI |
 
 ## Build
 ```

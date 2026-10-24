@@ -19,7 +19,7 @@
     route: { inGain: 1, inCh: 0, gtrLevel: 0.9, synthLevel: 0.9, master: 0.8, synthToPedals: false, track: false, trackDry: 1, trackOct: 0, trackBend: true, trackSens: 0.55, tuner: false, tunerMute: true, testOn: false, testLevel: 1, guitarOn: true, synthOn: true },
     bpm: store.get('bpm', 112), oct: 3, a4: 440, tab: 'synth', modTab: 0,
     user: store.get('user', []), userRigs: store.get('userRigs', []), learn: store.get('learn', {}), learnArm: null,
-    takes: [], recording: false, micOn: false, riff: 0,
+    takes: [], recording: false, micOn: false, riff: 0, kb: Object.assign({ bind: true, size: 'auto' }, store.get('kb', {})),
   };
   const DSTMAP = { 1: ['a.pos'], 3: ['a.level'], 4: ['a.warp'], 5: ['b.pos'], 7: ['b.level'], 8: ['b.warp'], 9: ['f.cutoff'], 10: ['f.res'], 11: ['f.drive'], 12: ['g.pos'], 13: ['g.level'], 14: ['sub.level'], 15: ['n.level'], 16: ['a.detune', 'b.detune'], 18: ['v.vol'] };
   const PARAM2DST = {}; for (const d in DSTMAP) for (const id of DSTMAP[d]) PARAM2DST[id] = +d;
@@ -854,18 +854,44 @@
   function noteOn(n, v) { if (!node) { start(); return; } post({ t: 'on', n, v }); keyMark(n, 'on', true); }
   function noteOff(n) { post({ t: 'off', n }); keyMark(n, 'on', false); }
   function keyMark(n, cls, on) { const k = keyEls[n]; if (k) k.classList.toggle(cls, on); }
+  // Key size: white-key width and keyboard height. Auto fits as many keys as the screen allows.
+  const KEY_SIZES = { auto: { w: 0, h: 0, label: 'Auto' }, s: { w: 24, h: 112, label: 'Small' }, m: { w: 36, h: 138, label: 'Medium' }, l: { w: 50, h: 172, label: 'Large' }, xl: { w: 68, h: 214, label: 'Extra large' } };
+  function applyKeySize() {
+    const z = KEY_SIZES[S.kb.size] || KEY_SIZES.auto;
+    if (z.h) document.documentElement.style.setProperty('--dock', z.h + 'px'); else document.documentElement.style.removeProperty('--dock');
+    const sb = $('#kb-size'); if (sb) sb.textContent = 'Keys: ' + (S.kb.size === 'auto' ? 'Auto' : S.kb.size.toUpperCase());
+  }
   function buildKeys() {
     const wrap = $('#keys'); wrap.innerHTML = ''; keyEls = {};
-    const W = wrap.clientWidth || 600, minW = innerWidth < 640 ? 30 : 24;
-    const whites = Math.max(10, Math.min(36, Math.floor(W / minW))), ww = W / whites;
+    const z = KEY_SIZES[S.kb.size] || KEY_SIZES.auto;
+    const W = wrap.clientWidth || 600, minW = z.w || (innerWidth < 640 ? 30 : 24);
+    const whites = Math.max(z.w ? 4 : 10, Math.min(36, Math.floor(W / minW))), ww = W / whites;
     let n = 12 * (S.oct + 1), x = 0, count = 0;
+    const base = 12 * (S.oct + 1), letters = {};
+    if (S.kb.bind) for (const k in KMAP) letters[base + KMAP[k]] = k === ';' || k === "'" ? k : k.toUpperCase();
     while (count < whites) {
       const pc = n % 12, black = [1, 3, 6, 8, 10].includes(pc);
       const el = h('div', { class: 'key ' + (black ? 'b' : 'w'), 'data-n': n });
       if (black) { el.style.left = (x - ww * 0.32) + 'px'; el.style.width = (ww * 0.64) + 'px'; }
       else { el.style.left = x + 'px'; el.style.width = ww + 'px'; if (pc === 0) el.append(h('span', { class: 'c', text: 'C' + (Math.floor(n / 12) - 1) })); x += ww; count++; }
+      if (letters[n]) el.append(h('span', { class: 'kb', text: letters[n] }));
       wrap.append(el); keyEls[n] = el; n++;
     }
+    $('#oct').textContent = 'C' + S.oct;
+  }
+  function setOct(o) { S.oct = Math.max(0, Math.min(7, o)); for (const k in kbHeld) { noteOff(kbHeld[k]); delete kbHeld[k]; } buildKeys(); }
+  function setBind(v) {
+    S.kb.bind = v; store.set('kb', S.kb);
+    for (const k in kbHeld) { noteOff(kbHeld[k]); delete kbHeld[k]; }
+    const b = $('#kb-bind'); if (b) b.set(v);
+    buildKeys(); toast(v ? 'Computer keyboard bound to the on-screen keys (A–’ play, Z/X shift octave)' : 'Computer keyboard unbound: typing no longer plays notes');
+  }
+  function setKeySize(sz) { S.kb.size = sz; store.set('kb', S.kb); applyKeySize(); requestAnimationFrame(() => { buildKeys(); redrawAll(); }); }
+  function keysMenu(e) {
+    const r = e.currentTarget.getBoundingClientRect();
+    const items = [{ head: 'Key size' }].concat(Object.keys(KEY_SIZES).map(k => ({ label: (S.kb.size === k ? '● ' : '○ ') + KEY_SIZES[k].label, act: () => setKeySize(k) })));
+    items.push('-', { head: 'Computer keyboard' }, { label: (S.kb.bind ? '● ' : '○ ') + 'Bound to the on-screen keys', act: () => setBind(true) }, { label: (!S.kb.bind ? '● ' : '○ ') + 'Not bound (typing never plays)', act: () => setBind(false) });
+    menu(r.left, r.top - 8 - 330, items);
   }
   function keyAt(x, y) { const el = document.elementFromPoint(x, y); const k = el && el.closest('.key'); if (!k) return null; const r = k.getBoundingClientRect(); return { n: +k.dataset.n, v: Math.max(0.3, Math.min(1, 0.35 + (y - r.top) / r.height * 0.75)) }; }
   function bindKeys() {
@@ -894,7 +920,8 @@
       const t = e.target; if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
       if (e.key === 'Escape') { post({ t: 'allOff' }); document.querySelectorAll('.key.on').forEach(k => k.classList.remove('on')); return; }
       const k = e.key.toLowerCase();
-      if (k === 'z' || k === 'x') { if (!e.repeat) { S.oct = Math.max(0, Math.min(7, S.oct + (k === 'z' ? -1 : 1))); $('#oct').textContent = 'C' + S.oct; buildKeys(); } return; }
+      if (!S.kb.bind) return;
+      if (k === 'z' || k === 'x') { if (!e.repeat) setOct(S.oct + (k === 'z' ? -1 : 1)); return; }
       if (k === ' ' && !(t && t.tagName === 'BUTTON')) { e.preventDefault(); if (!e.repeat) setSustain(true); return; }
       if (k in KMAP && !e.repeat && !kbHeld[k]) { if (t && t.classList && t.classList.contains('knob')) return; const n = 12 * (S.oct + 1) + KMAP[k]; kbHeld[k] = n; noteOn(n, 0.82); }
     });
@@ -969,9 +996,13 @@
     const mv = knob({ label: 'Master', min: 0, max: 1.2, def: 0.8 }, S.route.master, (v) => R('master', v), { size: 'sm' }); $('#master').append(mv);
     $('#wake-btn').addEventListener('click', start);
     // dock
-    $('#oct-dn').addEventListener('click', () => { S.oct = Math.max(0, S.oct - 1); $('#oct').textContent = 'C' + S.oct; buildKeys(); });
-    $('#oct-up').addEventListener('click', () => { S.oct = Math.min(7, S.oct + 1); $('#oct').textContent = 'C' + S.oct; buildKeys(); });
-    const hold = toggle('Hold', false, (v) => setSustain(v)); hold.id = 'hold'; $('#hold-slot').append(hold);
+    $('#oct-dn').addEventListener('click', () => setOct(S.oct - 1));
+    $('#oct-up').addEventListener('click', () => setOct(S.oct + 1));
+    const hold = toggle('Hold', false, (v) => setSustain(v)); hold.id = 'hold';
+    const bind = toggle('⌨ Bind', S.kb.bind, (v) => setBind(v)); bind.id = 'kb-bind'; bind.title = 'Bind the computer keyboard to the on-screen keys';
+    const size = h('button', { class: 'toggle', type: 'button', id: 'kb-size', title: 'Key size and keyboard binding', onclick: keysMenu });
+    $('#hold-slot').append(h('div', { class: 'row' }, [hold, bind]), size);
+    applyKeySize();
     buildKeys(); bindKeys(); bindComputerKeys();
     // first sound: the last one played, else a showcase pad
     const last = store.get('last', null), first = (last && allPatches().find(p => p.name === last.name)) || PRESETS.PATCHES[0];

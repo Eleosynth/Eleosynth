@@ -3,7 +3,6 @@
 # Builds Eleosynth into single self-contained HTML files (no network requests at run time).
 #   dist/eleosynth.html        standalone page (open in Chrome/Edge, or via the web launcher for guitar input)
 #   dist/eleosynth-page.html   the same page without the document skeleton, for publishing as a Claude page
-#   dist/Eleosynth-web.zip     page + local launcher + licence
 import base64, os, zipfile, re
 ROOT = os.path.dirname(os.path.abspath(__file__)); SRC = os.path.join(ROOT, 'src'); DIST = os.path.join(ROOT, 'dist')
 os.makedirs(DIST, exist_ok=True)
@@ -26,10 +25,4 @@ full = ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="
         '</head><body>' + page + '</body></html>')
 open(os.path.join(DIST, 'eleosynth.html'), 'w', encoding='utf-8').write(full)
 
-with zipfile.ZipFile(os.path.join(DIST, 'Eleosynth-web.zip'), 'w', zipfile.ZIP_DEFLATED) as z:
-    z.write(os.path.join(DIST, 'eleosynth.html'), 'Eleosynth/eleosynth.html')
-    for f in os.listdir(os.path.join(ROOT, 'web')):
-        z.write(os.path.join(ROOT, 'web', f), 'Eleosynth/' + f)
-    z.write(os.path.join(ROOT, 'LICENSE'), 'Eleosynth/LICENSE')
-    z.write(os.path.join(SRC, 'fonts', 'OFL.txt'), 'Eleosynth/fonts-OFL.txt')
 print('dist/eleosynth.html', round(len(full) / 1024), 'KB')

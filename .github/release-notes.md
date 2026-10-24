@@ -9,6 +9,10 @@
 | Android 7+ | `Eleosynth-*.apk` |
 | Browser | `Eleosynth-*-web.zip` (page + local launcher for guitar input and MIDI), or play at https://eleosynth.github.io/Eleosynth/app/ |
 
+### New in 0.1.1
+- **Bind keys:** a switch beside the keyboard ties your computer keyboard to the on-screen keys. Each bound key shows its letter (A W S E D F T G Y H U J K O L P ; ') and the letters follow the octave buttons and Z / X. Unbind it and typing never plays notes.
+- **Key size:** Keys menu with Auto, Small, Medium, Large and Extra large. Bigger keys are wider and taller, so they're easier to hit on a phone. The choice is remembered.
+
 ### In 0.1.0
 - Two wavetable oscillators (16 built-in tables + import your own), a six-model tine electric piano, the Aroma granular layer, sub and noise.
 - Ladder, state-variable and comb filters with analog drift; 3 envelopes, 2 LFOs, an 8-slot matrix with drag-to-modulate; arpeggiator.
