@@ -10,7 +10,9 @@ function load(sr = 48000) {
   new Function('sampleRate', 'AudioWorkletProcessor', 'registerProcessor', code)(g.sampleRate, g.AudioWorkletProcessor, g.registerProcessor);
   const ctx = {};
   new Function('ctx', fs.readFileSync(path.join(SRC, 'tables.js'), 'utf8') + ';' + fs.readFileSync(path.join(SRC, 'sources.js'), 'utf8') + ';ctx.WT=WT;ctx.SRC=SRC;')(ctx);
+  globalThis.currentFrame = 0; // AudioWorklet global: frames processed so far
   const eng = new procs['eleo-engine']();
+  const proc = eng.process.bind(eng); eng.process = (i, o) => { const r = proc(i, o); globalThis.currentFrame += (o[0] && o[0][0] ? o[0][0].length : 128); return r; };
   const send = (m) => eng.port.onmessage({ data: m });
   return { eng, send, WT: ctx.WT, SRCS: ctx.SRC, sr };
 }

@@ -544,19 +544,21 @@ class Reverb { // 8-line feedback delay network with input diffusion, modulation
   }
 }
 
-class Looper {
-  constructor() { this.max = Math.floor(SR * 40); this.bL = new Float32Array(this.max); this.bR = new Float32Array(this.max); this.state = 0; this.len = 0; this.pos = 0; this.level = 1; }
+class Looper { // record, overdub in layers (each pass is a layer), undo the last layer, feedback fades older layers
+  constructor() { this.max = Math.floor(SR * 40); this.bL = new Float32Array(this.max); this.bR = new Float32Array(this.max); this.uL = new Float32Array(this.max); this.uR = new Float32Array(this.max); this.state = 0; this.len = 0; this.pos = 0; this.level = 1; this.fb = 1; this.hasUndo = false; this.layers = 0; }
   // state: 0 empty, 1 recording, 2 playing, 3 overdubbing, 4 stopped
-  setParams(p) { this.level = p.level; }
+  setParams(p) { this.level = p.level; this.fb = p.feedback !== undefined ? p.feedback : 1; }
+  snap() { this.uL.set(this.bL.subarray(0, this.len)); this.uR.set(this.bR.subarray(0, this.len)); this.hasUndo = true; }
   cmd(c) {
     if (c === 'tap') {
-      if (this.state === 0) { this.state = 1; this.len = 0; this.pos = 0; }
-      else if (this.state === 1) { this.len = Math.max(this.pos, 1); this.state = 2; this.pos = 0; }
-      else if (this.state === 2) this.state = 3;
+      if (this.state === 0) { this.state = 1; this.len = 0; this.pos = 0; this.layers = 0; this.hasUndo = false; }
+      else if (this.state === 1) { this.len = Math.max(this.pos, 1); this.state = 2; this.pos = 0; this.layers = 1; }
+      else if (this.state === 2) { this.needSnap = true; this.state = 3; }
       else if (this.state === 3) this.state = 2;
       else if (this.state === 4) { this.state = 2; this.pos = 0; }
-    } else if (c === 'stop') { if (this.state === 1) { this.len = Math.max(this.pos, 1); } if (this.state !== 0) this.state = this.state === 4 ? 2 : 4; this.pos = 0; }
-    else if (c === 'clear') { this.state = 0; this.len = 0; this.pos = 0; this.bL.fill(0); this.bR.fill(0); }
+    } else if (c === 'stop') { if (this.state === 1) { this.len = Math.max(this.pos, 1); this.layers = 1; } if (this.state !== 0) this.state = this.state === 4 ? 2 : 4; this.pos = 0; }
+    else if (c === 'undo') { if (this.hasUndo) { this.bL.set(this.uL.subarray(0, this.len)); this.bR.set(this.uR.subarray(0, this.len)); this.hasUndo = false; this.layers = Math.max(1, this.layers - 1); if (this.state === 3) this.state = 2; } }
+    else if (c === 'clear') { this.state = 0; this.len = 0; this.pos = 0; this.layers = 0; this.hasUndo = false; this.bL.fill(0); this.bR.fill(0); }
   }
   process(L, R, n, st) {
     const s = this.state;
@@ -565,10 +567,11 @@ class Looper {
       const xl = L[i], xr = st ? R[i] : xl;
       if (s === 1) { this.bL[this.pos] = xl; this.bR[this.pos] = xr; this.pos++; if (this.pos >= this.max) { this.len = this.max; this.state = 2; this.pos = 0; } }
       else {
+        if (s === 3 && this.needSnap) { this.snap(); this.needSnap = false; this.layers++; } // a new layer starts with its first written sample
         const pl = this.bL[this.pos], pr = this.bR[this.pos];
-        if (s === 3) { this.bL[this.pos] = pl + xl; this.bR[this.pos] = pr + xr; }
+        if (s === 3) { this.bL[this.pos] = pl * this.fb + xl; this.bR[this.pos] = pr * this.fb + xr; }
         L[i] = xl + pl * this.level; R[i] = xr + pr * this.level;
-        if (++this.pos >= this.len) this.pos = 0;
+        if (++this.pos >= this.len) { this.pos = 0; if (s === 3) this.needSnap = true; }
       }
     }
     return s === 1 ? st : true;
@@ -956,6 +959,116 @@ class Hyper { // six-voice detuned chorus
 const UNIT_TYPES = { gate: Gate, comp: Comp, boost: Boost, drive: Drive, fuzz: Fuzz, octave: Octaver, pitch: Pitch, envf: EnvFilter, amp: Amp, eq: EQ4, chorus: Chorus, phaser: Phaser, flanger: Flanger, trem: Trem, cassette: Cassette, swell: Swell, delay: EchoDelay, reverb: Reverb, looper: Looper, grind: Grind,
   plate: Plate, ensemble: Ensemble, rotary: Rotary, autopan: AutoPan, vibe: Vibe, ringmod: RingMod, freqshift: FreqShift, mfilter: MotionFilter, crush: Crush, widener: Widener, limiter: Limiter, exciter: Exciter, transient: Transient, formant: Formant, spring: Spring, cloud: Cloud, revdelay: ReverseDelay, pump: Pump, hyper: Hyper };
 
+// ---------------------------------------------------------------- DN drone (sound source that holds on its own)
+const SINE = new Float32Array(4097); for (let i = 0; i <= 4096; i++) SINE[i] = Math.sin(TAU * i / 4096);
+function fsin(ph) { const x = (ph - Math.floor(ph)) * 4096, i = x | 0; return SINE[i] + (SINE[i + 1] - SINE[i]) * (x - i); }
+function blepSaw(p, dt) { let s = 2 * p - 1; if (p < dt) { const t = p / dt; s -= t + t - t * t - 1; } else if (p > 1 - dt) { const t = (p - 1) / dt; s -= t * t + t + t + 1; } return s; }
+const TANPURA_FIRST = [-5, -7, -1, 0]; // Pa, Ma, Ni, Sa
+class Drone {
+  constructor() {
+    this.on = false; this.g = 0; this.type = 0; this.root = 48; this.p = {}; this.t = 0;
+    this.str = [0, 1, 2, 3].map(() => ({ ph: new Float64Array(24), amp: new Float32Array(24), env: 0, age: 1e9, det: 0, pan: 0 }));
+    this.osc = new Float64Array(12); this.lp = [0, 0]; this.sweep = 0; this.next = 0; this.k = 0;
+  }
+  setParams(p) { this.p = p; this.on = !!p.on; this.type = p.type | 0; this.root = p.root || 48; }
+  process(L, R, n) {
+    const p = this.p, tgt = this.on ? 1 : 0;
+    if (!this.on && this.g < 1e-4) { this.g = 0; return; }
+    const lvl = (p.level !== undefined ? p.level : 0.6) * 0.34, mv = p.move || 0, fifth = p.fifth !== undefined ? p.fifth : 0.7;
+    const fc = 180 * Math.pow(2, (p.tone !== undefined ? p.tone : 0.6) * 6.5), lpc = Math.exp(-TAU * Math.min(fc, SR * 0.45) / SR);
+    const ramp = 1 / (1.6 * SR);
+    if (this.type === 0) this.tanpura(L, R, n, lvl, fifth, mv, lpc, tgt, ramp);
+    else {
+      const f0 = mtof(this.root), O = this.osc;
+      // voice list: [semitones, gain, pan, detune cents, kind] kind: 0 saw, 1 reed (pulse-ish), 2 sine
+      let V;
+      if (this.type === 1) V = [[0, 1, -0.3, -4, 0], [0, 0.8, 0.3, 5, 0], [7, fifth, 0.4, 3, 0], [12, 0.6, -0.4, -2, 0]];             // shruti box
+      else if (this.type === 2) V = [[-24, 0.9, 0, 0, 1], [-12, 0.75, -0.35, 3, 1], [0, 0.6, 0.35, -2, 1], [7, fifth * 0.5, 0.1, 1, 1]]; // uilleann drones
+      else if (this.type === 3) V = [[0, 0.8, -0.5, -7 - mv * 10, 0], [0, 0.8, 0.5, 7 + mv * 10, 0], [-12, 0.7, 0, 0, 2], [7, fifth * 0.4, 0, 0, 0]]; // analog
+      else V = [[0, 1, -0.2, 0, 2], [12, 0.5, 0.3, 1.5, 2], [19, fifth * 0.4, -0.4, -2, 2], [24, 0.25, 0.5, 3, 2]];                    // glass
+      for (let i = 0; i < n; i++) {
+        this.g += (tgt - this.g) * (tgt ? 1.2e-5 * 48000 / SR : 2.4e-5 * 48000 / SR);
+        this.t += 1 / SR;
+        const breath = this.type === 1 ? 0.78 + 0.22 * Math.sin(TAU * this.t / Math.max(1, p.cycle || 4)) * (0.3 + mv) : 1;
+        let l = 0, r = 0;
+        for (let k = 0; k < V.length; k++) {
+          const v = V[k]; if (v[1] <= 0) continue;
+          const wob = 1 + mv * 0.0012 * Math.sin(TAU * (0.11 + k * 0.07) * this.t + k);
+          const dt = f0 * Math.pow(2, (v[0] + v[3] / 100) / 12) * wob / SR;
+          let ph = O[k] + dt; if (ph >= 1) ph -= 1; O[k] = ph;
+          let x;
+          if (v[4] === 0) x = blepSaw(ph, dt) * 0.5;
+          else if (v[4] === 1) { const d = 0.28; x = blepSaw(ph, dt) - blepSaw((ph + d) % 1, dt); x *= 0.45; }
+          else x = fsin(ph) * 0.8;
+          x *= v[1]; l += x * (1 - v[2]); r += x * (1 + v[2]);
+        }
+        l *= breath; r *= breath;
+        this.lp[0] = l + (this.lp[0] - l) * lpc; this.lp[1] = r + (this.lp[1] - r) * lpc;
+        L[i] += this.lp[0] * lvl * this.g; R[i] += this.lp[1] * lvl * this.g;
+      }
+    }
+  }
+  tanpura(L, R, n, lvl, fifth, mv, lpc, tgt, ramp) {
+    const p = this.p, cycle = Math.max(1.5, p.cycle || 4), jaw = p.jawari !== undefined ? p.jawari : 0.6;
+    const first = TANPURA_FIRST[p.first | 0] || -5;
+    const notes = [this.root + first, this.root, this.root, this.root - 12];
+    const gains = [fifth, 0.85, 0.85, 1];
+    const pans = [-0.45, -0.1, 0.15, 0.45];
+    for (let off = 0; off < n; off += 32) {
+      const m = Math.min(32, n - off);
+      // pluck schedule: the four strings in turn, one cycle per round
+      this.next -= m / SR;
+      if (this.next <= 0) { const S = this.str[this.k]; S.env = 1; S.age = 0; S.det = brnd() * 1.5; this.k = (this.k + 1) & 3; this.next += cycle / 4; }
+      for (let s = 0; s < 4; s++) {
+        const S = this.str[s]; S.age += m / SR; S.env *= Math.exp(-(m / SR) / (cycle * 1.4));
+        // jawari: a bright band of harmonics that travels upward as the string rings
+        const c = 2 + jaw * 16 * Math.min(1, S.age / (cycle * 0.9));
+        for (let h = 0; h < 24; h++) { const hh = h + 1, base = 1 / Math.pow(hh, 1.05), bump = 1 + jaw * 4 * Math.exp(-Math.pow((hh - c) / 2.6, 2)); S.amp[h] = base * bump * S.env * gains[s]; }
+      }
+      for (let i = off; i < off + m; i++) {
+        this.g += (tgt - this.g) * (tgt ? 1.2e-5 * 48000 / SR : 2.4e-5 * 48000 / SR);
+        let l = 0, r = 0;
+        for (let s = 0; s < 4; s++) {
+          const S = this.str[s]; if (S.env < 1e-4) continue;
+          const f = mtof(notes[s] + S.det / 100) / SR; let x = 0;
+          for (let h = 0; h < 24; h++) { const inc = f * (h + 1) * (1 + 0.0004 * h * h * 0.1); if (inc >= 0.48) break; S.ph[h] += inc; if (S.ph[h] >= 1) S.ph[h] -= 1; x += fsin(S.ph[h]) * S.amp[h]; }
+          x *= 0.22; l += x * (1 - pans[s]); r += x * (1 + pans[s]);
+        }
+        this.lp[0] = l + (this.lp[0] - l) * lpc; this.lp[1] = r + (this.lp[1] - r) * lpc;
+        L[i] += this.lp[0] * lvl * this.g; R[i] += this.lp[1] * lvl * this.g;
+      }
+    }
+  }
+}
+
+// ---------------------------------------------------------------- MX master section: 3-band EQ, glue compressor, width (ceiling = the output limiter)
+class Master {
+  constructor() { this.eq = [0, 1].map(() => [new Biquad(), new Biquad(), new Biquad()]); this.env = 0; this.gr = 0; this.setParams({}); }
+  setParams(p) {
+    this.p = Object.assign({ low: 0, mid: 0, high: 0, comp: 0, ratio: 2, width: 1, ceiling: -0.3, on: 1 }, p);
+    const q = this.p; for (const b of this.eq) { b[0].set('ls', 120, 0.7, q.low); b[1].set('peak', 1000, 0.7, q.mid); b[2].set('hs', 6000, 0.7, q.high); }
+    this.eqOn = q.low || q.mid || q.high;
+    this.thr = -6 - q.comp * 24; this.makeup = dbToGain(q.comp * 24 * (1 - 1 / q.ratio) * 0.5);
+    this.att = 1 - Math.exp(-1 / (0.01 * SR)); this.rel = 1 - Math.exp(-1 / (0.18 * SR));
+  }
+  process(L, R, n) {
+    const q = this.p; if (!q.on) return;
+    if (this.eqOn) for (let c = 0; c < 2; c++) { const X = c ? R : L, b = this.eq[c]; for (let i = 0; i < n; i++) X[i] = b[2].run(b[1].run(b[0].run(X[i]))); }
+    let gmin = 0;
+    if (q.comp > 0) {
+      for (let i = 0; i < n; i++) {
+        const x = Math.max(Math.abs(L[i]), Math.abs(R[i]));
+        this.env += (x - this.env) * (x > this.env ? this.att : this.rel);
+        const db = 20 * Math.log10(this.env + 1e-9), over = db - this.thr;
+        const gr = over > 0 ? over * (1 - 1 / q.ratio) : 0; if (gr > gmin) gmin = gr;
+        const g = dbToGain(-gr) * this.makeup; L[i] *= g; R[i] *= g;
+      }
+    }
+    this.gr = gmin;
+    if (q.width !== 1) for (let i = 0; i < n; i++) { const m = (L[i] + R[i]) * 0.5, s = (L[i] - R[i]) * 0.5 * q.width; L[i] = m + s; R[i] = m - s; }
+  }
+}
+
 class Chain {
   constructor() { this.u = []; }
   set(defs, bpm) {
@@ -1084,7 +1197,9 @@ class EleoEngine extends AudioWorkletProcessor {
     this.gl = new Float32Array(128); this.sL = new Float32Array(128); this.sR = new Float32Array(128); this.pL = new Float32Array(128); this.pR = new Float32Array(128);
     // guitar side
     this.R = { inGain: 1, inCh: 0, gtrLevel: 1, synthLevel: 1, master: 0.8, synthToPedals: false, track: false, trackDry: 1, trackOct: 0, trackBend: true, trackSens: 0.5, tuner: false, tunerMute: false, testOn: false, testLevel: 1, guitarOn: true, synthOn: true };
-    this.ped = new Chain(); this.fx = new Chain();
+    this.ped = new Chain(); this.fx = new Chain(); this.drone = new Drone(); this.master = new Master();
+    this.lock = false; this.lockArmed = false; this.locked = new Set(); this.padY = 0.5; this.padYMode = 0;
+    this.mL = new Float32Array(128); this.mR = new Float32Array(128);
     this.toneLo = [new Biquad(), new Biquad()]; this.toneHi = [new Biquad(), new Biquad()];
     this.yin = new Yin(); this.gEnv = new Follower(1, 120); this.gEnvSlow = new Follower(30, 300); this.gEnvVal = 0;
     this.trk = { on: false, note: -1, stable: 0, cand: -1, peak: 0, lastF: 0 };
@@ -1114,6 +1229,13 @@ class EleoEngine extends AudioWorkletProcessor {
       case 'wheel': this.wheel = m.v; break;
       case 'bend': this.pb = m.v; break;
       case 'sustain': this.sustain = m.v; if (!m.v) { for (const n of this.sustained) this.noteOff(n); this.sustained.clear(); } break;
+      case 'lock': this.setLock(m.v); break;
+      case 'drone': this.drone.setParams(m.p); break;
+      case 'master': this.master.setParams(m.p); this.lim = dbToGain(this.master.p.ceiling); break;
+      case 'padOn': { const vc = this.voices[12 + (m.id % 3)]; this.startVoice(vc, Math.round(m.m), m.v, false, false); vc.pad = true; vc.target = m.m; vc.pitch = m.m; break; }
+      case 'padMove': { const vc = this.voices[12 + (m.id % 3)]; if (vc.pad && vc.gate) { vc.target = m.m; vc.note = Math.round(m.m); } break; }
+      case 'padOff': { const vc = this.voices[12 + (m.id % 3)]; if (vc.pad) this.release(vc); break; }
+      case 'padY': this.padY = m.v; this.padYMode = m.mode | 0; break;
       case 'bpm': this.bpm = m.v; this.dirty = true; this.ped.refresh(m.v); this.fx.refresh(m.v); break;
       case 'route': Object.assign(this.R, m.r); break;
       case 'chain': (m.w === 'fx' ? this.fx : this.ped).set(m.chain, this.bpm); break;
@@ -1139,8 +1261,13 @@ class EleoEngine extends AudioWorkletProcessor {
   }
 
   // ------------------------------------------------ notes
+  setLock(v) {
+    if (v) { this.lock = true; if (this.held.length) { for (const x of this.held) this.locked.add(x); this.lockArmed = false; } else this.lockArmed = true; }
+    else { this.lock = false; this.lockArmed = false; const L = [...this.locked]; this.locked.clear(); for (const x of L) if (!this.held.includes(x) && !(this.sustain && this.sustained.has(x))) this.noteOff(x); }
+  }
   keyOn(n, v) {
     this.held = this.held.filter(x => x !== n); this.held.push(n); this.sustained.delete(n);
+    if (this.lockArmed) this.locked.add(n);
     if (this.P['arp.on']) {
       if (this.P['arp.latch'] && this.arpHeldCount === 0) this.arpLatched = [];
       this.arpHeldCount++;
@@ -1152,6 +1279,8 @@ class EleoEngine extends AudioWorkletProcessor {
   }
   keyOff(n) {
     this.held = this.held.filter(x => x !== n);
+    if (this.lockArmed && !this.held.length && this.locked.size) this.lockArmed = false; // the armed chord is now locked
+    if (this.locked.has(n)) return;
     if (this.P['arp.on']) {
       this.arpHeldCount = Math.max(0, this.arpHeldCount - 1);
       if (!this.P['arp.latch']) { this.arpLatched = this.arpLatched.filter(x => x !== n); if (!this.arpLatched.length) this.arpStop(); }
@@ -1173,7 +1302,7 @@ class EleoEngine extends AudioWorkletProcessor {
       this.startVoice(vc, n, v, legato, gtr);
       return;
     }
-    const poly = clamp(P['v.poly'] | 0 || 8, 1, 15);
+    const poly = clamp(P['v.poly'] | 0 || 8, 1, 12); // 12-14 belong to the touch pad, 15 to the guitar
     let vc = null;
     for (let i = 0; i < poly; i++) { const x = this.voices[i]; if (x.active && x.note === n && !x.gtr) { vc = x; break; } }
     if (!vc) for (let i = 0; i < poly; i++) if (!this.voices[i].active) { vc = this.voices[i]; break; }
@@ -1187,7 +1316,7 @@ class EleoEngine extends AudioWorkletProcessor {
   }
   startVoice(vc, n, v, legato, gtr) {
     const P = this.P;
-    vc.note = n; vc.target = n; vc.gtr = gtr; vc.gate = true; vc.vel = v;
+    vc.note = n; vc.target = n; vc.gtr = gtr; vc.gate = true; vc.vel = v; vc.pad = false;
     const glide = P['v.glide'] || 0;
     if (!vc.active || (glide <= 0.0005)) vc.pitch = n;
     if (legato) return;
@@ -1220,7 +1349,7 @@ class EleoEngine extends AudioWorkletProcessor {
     for (const vc of this.voices) if (vc.active && vc.gate && vc.note === n && !vc.gtr) this.release(vc);
   }
   release(vc) { vc.gate = false; for (const e of vc.e) if (e.st) e.st = 4; }
-  allOff() { this.held = []; this.sustained.clear(); this.monoStack = []; this.arpStop(); for (const vc of this.voices) { vc.gate = false; vc.active = false; for (const e of vc.e) { e.st = 0; e.lv = 0; } } this.trk.note = -1; }
+  allOff() { this.lock = false; this.lockArmed = false; this.locked.clear(); this.held = []; this.sustained.clear(); this.monoStack = []; this.arpStop(); for (const vc of this.voices) { vc.gate = false; vc.active = false; for (const e of vc.e) { e.st = 0; e.lv = 0; } } this.trk.note = -1; }
 
   // ------------------------------------------------ arpeggiator
   arpTick(n) {
@@ -1334,7 +1463,9 @@ class EleoEngine extends AudioWorkletProcessor {
 
     // glide
     const gl = P['v.glide'] || 0;
-    if (gl > 0.0005) vc.pitch += (vc.target - vc.pitch) * (1 - Math.exp(-n / (gl * SR * 0.35))); else vc.pitch = vc.target;
+    if (vc.pad) { vc.pitch += (vc.target - vc.pitch) * (1 - Math.exp(-n / (Math.max(0.012, gl * 0.35) * SR)));
+      const y = this.padY; if (this.padYMode === 0) D[9] += (y - 0.5) * 1.1; else if (this.padYMode === 2) D[18] += y * 1.4 - 1; else D[19] += Math.sin(TAU * 5.6 * vc.t) * y * 0.025; }
+    else if (gl > 0.0005) vc.pitch += (vc.target - vc.pitch) * (1 - Math.exp(-n / (gl * SR * 0.35))); else vc.pitch = vc.target;
     const base = vc.pitch + vc.bend + this.pb * (P['v.bend'] || 2) + driftC / 100 + D[19] * 24;
     vc.t += n / SR; vc.age += n;
 
@@ -1597,7 +1728,7 @@ class EleoEngine extends AudioWorkletProcessor {
       this.cap[this.capW] = x; if (++this.capW >= this.capLen) this.capW = 0;
     }
     // envelope follower + pitch detection
-    const needYin = R.tuner || R.track;
+    const needYin = R.tuner || R.track; this.yin.minF = R.tuner ? 27 : 60;
     let env = 0;
     for (let i = 0; i < n; i++) {
       env = this.gEnv.run(gl[i]);
@@ -1617,6 +1748,7 @@ class EleoEngine extends AudioWorkletProcessor {
       for (const vc of this.voices) if (vc.active) this.renderVoice(vc, sL, sR, off, m);
     }
     for (let i = 0; i < n; i++) { sL[i] *= 0.45; sR[i] *= 0.45; } // voice headroom
+    this.drone.process(sL, sR, n);
     for (let k = 0; k < 2; k++) { this.lfoG[k] += this.lfoRate(k + 1) * n / SR; this.lfoG[k] -= Math.floor(this.lfoG[k]); }
     // tone + synth FX
     let pkS = 0;
@@ -1637,10 +1769,15 @@ class EleoEngine extends AudioWorkletProcessor {
     // --- mix + master
     const gL = R.gtrLevel * (tunerMute ? 0 : 1), sLv = R.synthToPedals ? 0 : R.synthLevel * (R.synthOn ? 1 : 0), mv = R.master;
     const att = 1 - Math.exp(-1 / (0.0007 * SR)), rel = 1 - Math.exp(-1 / (0.15 * SR)), ceil = this.lim;
-    let pkO = 0;
+    let pkO = 0; const mL = this.mL, mR = this.mR;
     for (let i = 0; i < n; i++) {
       let l = (pL[i] * gL + sL[i] * sLv) * mv, r = (pR[i] * gL + sR[i] * sLv) * mv;
       if (R.synthToPedals && tunerMute) { l = 0; r = 0; }
+      mL[i] = l; mR[i] = r;
+    }
+    this.master.process(mL, mR, n);
+    for (let i = 0; i < n; i++) {
+      let l = mL[i], r = mR[i];
       // DC blocker
       const yl = l - this.dcxL + 0.9995 * this.dcL; this.dcxL = l; this.dcL = yl; l = yl;
       const yr = r - this.dcxR + 0.9995 * this.dcR; this.dcxR = r; this.dcR = yr; r = yr;
@@ -1650,6 +1787,7 @@ class EleoEngine extends AudioWorkletProcessor {
       this.limG += (tgt - this.limG) * (tgt < this.limG ? att : rel);
       l *= this.limG; r *= this.limG;
       if (l > 0.98 || l < -0.98) l = ftanh(l); if (r > 0.98 || r < -0.98) r = ftanh(r);
+      if (l > ceil) l = ceil; else if (l < -ceil) l = -ceil; if (r > ceil) r = ceil; else if (r < -ceil) r = -ceil;
       oL[i] = l; oR[i] = r;
       if (pk * this.limG > pkO) pkO = pk * this.limG;
     }
@@ -1658,8 +1796,8 @@ class EleoEngine extends AudioWorkletProcessor {
     if ((this.meterT += n) >= SR / 30) {
       this.meterT = 0; let voices = 0; let mv0 = null;
       for (const vc of this.voices) if (vc.active) { voices++; if (!mv0) mv0 = vc.modOut; }
-      const loops = []; this.ped.u.forEach((c, i) => { if (c.type === 'looper') loops.push({ i, s: c.unit.state, p: c.unit.len ? c.unit.pos / c.unit.len : 0, len: (c.unit.state === 1 ? c.unit.pos : c.unit.len) / SR }); });
-      this.port.postMessage({ t: 'm', i: this.pkIn, o: this.pkOut, s: this.pkSyn, v: voices, mv: mv0, lim: this.limG, ge: this.gEnvVal, loops, tn: this.trk.note });
+      const loops = []; this.ped.u.forEach((c, i) => { if (c.type === 'looper') loops.push({ i, s: c.unit.state, p: c.unit.len ? c.unit.pos / c.unit.len : 0, len: (c.unit.state === 1 ? c.unit.pos : c.unit.len) / SR, u: c.unit.hasUndo, ly: c.unit.layers }); });
+      this.port.postMessage({ t: 'm', i: this.pkIn, o: this.pkOut, s: this.pkSyn, v: voices, mv: mv0, lim: this.limG, ge: this.gEnvVal, loops, tn: this.trk.note, gr: this.master.gr, lk: this.locked.size ? [...this.locked] : null, la: this.lockArmed });
       this.pkIn = 0; this.pkOut = 0; this.pkSyn = 0;
     }
     if (R.tuner && (this.tuneT += n) >= SR / 20) { this.tuneT = 0; this.port.postMessage({ t: 'tu', f: this.yin.freq, c: this.yin.conf, e: this.gEnv.v }); }

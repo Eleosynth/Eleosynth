@@ -3,10 +3,11 @@
 **Free software.** Copyright (C) 2026 Josh Wilk. GNU General Public License, version 3 or (at your option) any later
 version — see [LICENSE](LICENSE). No price, no tiers, no sign-up, no tracking: the app makes no network requests (Send to DAWters opens the DAWters page, only when you choose it).
 
-Part of the **DAWters and Son** suite (DAWters and Son · Esperanza's Drum Kit · Eleosynth). A deep synthesizer
+A **DAWters & Son production**: part of the DAWters and Son suite (DAWters and Son · Esperanza's Drum Kit · Eleosynth). A deep synthesizer
 inspired by the reach of Serum (wavetables), Diva (drifting analog filters) and Omnisphere (layers and granular
 texture), fused with a guitar pedalboard you play through live. Design: **"Tostado"**, a roaster's bench at night,
-with a welded-steel coffee tree hung with red cherries as the logo. One codebase (plain HTML + Web Audio + one
+with a welded-steel coffee tree hung with red cherries as the logo, set in the DAWters & Son type family
+(Yesteryear script for names, Oswald for headings, Courier Prime for text). One codebase (plain HTML + Web Audio + one
 AudioWorklet, no libraries, works offline).
 
 ## 0.2.0 — inside DAWters
@@ -38,6 +39,17 @@ AudioWorklet, no libraries, works offline).
   **guitar envelope**. 8-slot matrix to 19 destinations; drag a modulator's grip onto a knob, or right-click a knob →
   *Modulate with*. Red rings show modulation on knobs.
 - **Arpeggiator**: up, down, up-down, as played, random, chord; 1/4–1/32 incl. triplets; 1–4 octaves; gate, swing, latch.
+
+### Perform and Master (0.2, from the Joshenthesizer)
+- **Drone lock** (Lock button, `\` key, sostenuto CC66; arm-then-play), **DN Drone** (Tanpura, Shruti box, Uilleann
+  drones, Analog, Glass), **touch pad** (multi-touch XY, scale-snapped or free, Y = filter / vibrato / volume, hold),
+  **chord modes** (key + 12 scales, Chord and Rolled chord, triad / 7th / add 9 / sus 4) and a **chord namer**.
+- **TN Tuner**: 20 instruments and tunings, string detect or lock, reference tones, needle + strobe.
+- **MX Master**: 3-band EQ, glue compressor, width, ceiling, spectrum. **Looper** layers with undo and feedback.
+- **MIDI**: channel filter, clock follow, CC7 / CC66 / CC71 / CC74.
+
+Deliberately left in the other suite apps: tape tracks and arranging (DAWters and Son), drums and patterns
+(Esperanza's Drum Kit). The Joshenthesizer's lyric book, score, song maker and kids mode stay there too.
 
 ### Effects pool — 39 units, shared by the synth FX rack and the pedalboard
 Dynamics: Grounds Gate, Squeeze (compressor), The Lid (limiter), Snap (transient), Morning Swell, Percolate (tempo pump).
@@ -91,6 +103,8 @@ the repository secrets `ELEO_KEYSTORE_B64` and `ELEO_KS_PASS` hold the release k
 ```
 node tools/test_engine.js     # pitch accuracy, every table × warp, every filter, tine models, all 39 effects, CPU
 node tools/test_track.js      # guitar -> synth tracking on a melody; arpeggiator timing
+node tools/test_new.js        # drones, drone lock, touch pad pitch, looper undo, master section
+python3 tools/ui_features.py DIR  # drives chord mode, lock, pad, drone, tuner, master in Chromium
 node tools/test_presets.js    # every factory sound and rig renders cleanly
 python3 tools/ui_check.py DIR # headless Chromium: start, play, every tab, desktop + phone screenshots, console errors
 python3 tools/electron_check.py OUT.png  # boots the packaged Linux app under Xvfb and plays the test guitar

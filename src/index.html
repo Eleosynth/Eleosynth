@@ -12,7 +12,7 @@
   <div class="top-row">
     <div class="brand">
       <img id="logo" alt="Eleosynth logo: a steel coffee tree with red cherries" width="54" height="54">
-      <div><h1>Eleo<span>synth</span></h1><small>Synth &amp; pedal studio · DAWters and Son</small></div>
+      <div><h1>Eleosynth</h1><span class="tag">★ Fresh roasted sound ★</span></div>
     </div>
     <div class="bar-group" role="group" aria-label="Sound">
       <button class="icon-btn" id="prev" type="button" aria-label="Previous sound">‹</button>
@@ -20,6 +20,7 @@
       <button class="icon-btn" id="next" type="button" aria-label="Next sound">›</button>
       <button class="btn small" id="save" type="button">Save</button>
     </div>
+    <a class="suite-badge" id="suite-badge" href="https://dawters-and-son.github.io/dawters-and-son/" target="_blank" rel="noopener" title="Part of the DAWters &amp; Son suite"><img id="ds-icon" alt="" width="16" height="16">a <b>DAWters &amp; Son</b> production</a>
     <span class="spacer"></span>
     <div class="bpm"><span class="lbl">Tempo</span><input id="bpm" type="number" min="30" max="300" inputmode="numeric" aria-label="Tempo in BPM"></div>
     <div class="row" style="align-items:center;gap:8px;flex-wrap:nowrap">
@@ -36,6 +37,8 @@
       <button class="tab" role="tab" type="button" data-tab="synth" aria-selected="true">Synth</button>
       <button class="tab" role="tab" type="button" data-tab="fx" aria-selected="false">FX rack<span class="count" id="fx-count">0</span></button>
       <button class="tab" role="tab" type="button" data-tab="pedals" aria-selected="false">Pedalboard</button>
+      <button class="tab" role="tab" type="button" data-tab="perform" aria-selected="false">Perform</button>
+      <button class="tab" role="tab" type="button" data-tab="master" aria-selected="false">Master</button>
       <button class="tab" role="tab" type="button" data-tab="takes" aria-selected="false">Takes &amp; files<span class="count" id="takes-count"></span></button>
     </nav>
     <p class="hint" id="patch-desc" style="margin:0 0 8px auto;text-align:right;max-width:52ch"></p>
@@ -45,22 +48,28 @@
   <div class="view" id="view-synth"></div>
   <div class="view" id="view-fx" hidden></div>
   <div class="view" id="view-pedals" hidden></div>
+  <div class="view" id="view-perform" hidden></div>
+  <div class="view" id="view-master" hidden></div>
   <div class="view" id="view-takes" hidden></div>
 </main>
 <div class="dock" role="region" aria-label="Keyboard">
   <div class="wake" id="wake">
     <button class="btn gold" id="wake-btn" type="button">Start Eleosynth</button>
-    <p>Browsers start audio only after a tap. Then play the keys, your computer keyboard (A–L), a MIDI keyboard, or your guitar.</p>
+    <p>Browsers start audio only after a tap. Then play the keys or the touch pad, your computer keyboard (A–L), a MIDI keyboard, or your guitar.</p>
   </div>
   <div class="wheels">
     <div class="wheel" id="pw" role="slider" aria-label="Pitch bend"><i></i><span>BEND</span></div>
     <div class="wheel" id="mw" role="slider" aria-label="Mod wheel"><i></i><span>MOD</span></div>
   </div>
   <div class="kctl">
-    <span class="lbl">Octave</span>
-    <div class="row"><button class="icon-btn" id="oct-dn" type="button" aria-label="Octave down">−</button><span class="num" id="oct" style="align-self:center">C3</span><button class="icon-btn" id="oct-up" type="button" aria-label="Octave up">+</button></div>
-    <div id="hold-slot"></div>
+    <div class="kcol">
+      <span class="lbl chord" id="chord-name" aria-live="polite">Octave</span>
+      <div class="row"><button class="icon-btn" id="oct-dn" type="button" aria-label="Octave down">−</button><span class="num" id="oct" style="align-self:center">C3</span><button class="icon-btn" id="oct-up" type="button" aria-label="Octave up">+</button></div>
+      <div id="seg-slot"></div>
+    </div>
+    <div class="kcol" id="hold-slot"></div>
   </div>
   <div class="keys" id="keys" aria-label="Piano keys"></div>
+  <canvas class="pad" id="pad" aria-label="Touch pad: left to right plays notes in the key, up and down shapes the sound" hidden></canvas>
 </div>
 <!--SCRIPTS-->

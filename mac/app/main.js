@@ -24,7 +24,7 @@ function createWindow() {
   if (st.max) win.maximize();
   win.once('ready-to-show', () => win.show());
   win.on('close', saveState);
-  const tab = ['synth', 'fx', 'pedals', 'takes'].find((t) => process.argv.includes('--' + t));
+  const tab = ['synth', 'fx', 'pedals', 'perform', 'master', 'takes'].find((t) => process.argv.includes('--' + t));
   win.loadFile(path.join(__dirname, 'eleosynth.html'), tab ? { hash: tab } : undefined);
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^https?:/.test(url)) shell.openExternal(url); return { action: 'deny' }; });
   win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('file:')) e.preventDefault(); });
@@ -44,6 +44,7 @@ function buildMenu() {
       { label: 'Surprise Me', accelerator: 'CmdOrCtrl+R', click: () => send('surprise') },
       { label: 'Record / Stop', accelerator: 'CmdOrCtrl+Shift+R', click: () => send('record') },
       { label: 'All Notes Off', accelerator: 'CmdOrCtrl+.', click: () => send('panic') },
+      { label: 'Drone Lock', accelerator: 'CmdOrCtrl+L', click: () => send('lock') },
       ...(isMac ? [] : [{ type: 'separator' }, { role: 'quit' }]),
     ] },
     { role: 'editMenu' },
@@ -51,7 +52,9 @@ function buildMenu() {
       { label: 'Synth', accelerator: 'CmdOrCtrl+1', click: () => send('tab:synth') },
       { label: 'FX Rack', accelerator: 'CmdOrCtrl+2', click: () => send('tab:fx') },
       { label: 'Pedalboard', accelerator: 'CmdOrCtrl+3', click: () => send('tab:pedals') },
-      { label: 'Takes & Files', accelerator: 'CmdOrCtrl+4', click: () => send('tab:takes') },
+      { label: 'Perform', accelerator: 'CmdOrCtrl+4', click: () => send('tab:perform') },
+      { label: 'Master', accelerator: 'CmdOrCtrl+5', click: () => send('tab:master') },
+      { label: 'Takes & Files', accelerator: 'CmdOrCtrl+6', click: () => send('tab:takes') },
       { type: 'separator' }, { role: 'resetZoom' }, { role: 'zoomIn' }, { role: 'zoomOut' }, { type: 'separator' }, { role: 'togglefullscreen' },
     ] },
     { role: 'windowMenu' },

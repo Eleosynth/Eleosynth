@@ -20,7 +20,7 @@ const SCHEMA = (() => {
 
   // voice
   en('v.mode', 'Voices', ['Poly', 'Mono', 'Legato'], 0);
-  add('v.poly', 'Polyphony', 1, 15, 8, { int: true });
+  add('v.poly', 'Polyphony', 1, 12, 8, { int: true });
   add('v.glide', 'Glide', 0, 2, 0, { curve: 'pow', unit: 's' });
   add('v.bend', 'Bend range', 0, 24, 2, { int: true, unit: 'st' });
   add('v.drift', 'Drift', 0, 1, 0.2);
@@ -124,7 +124,7 @@ const SCHEMA = (() => {
     plate: { name: 'Steel Plate', kind: 'Plate reverb', cat: 5, ink: 'steel', knobs: [k('size', 'Size', 0, 1, 0.5), k('decay', 'Decay', 0.3, 10, 2, { curve: 'exp', unit: 's' }), k('damp', 'Damping', 0, 1, 0.3), k('pre', 'Pre-delay', 0, 250, 10, { unit: 'ms' }), k('mix', 'Mix', 0, 1, 0.3), k('mod', 'Motion', 0, 1, 0.3), k('lowcut', 'Low cut', 0, 1, 0.2), ke('freeze', 'Freeze', ['Off', 'On'], 0)] },
     spring: { name: 'Spring Tank', kind: 'Spring reverb', cat: 5, ink: 'brown', knobs: [k('decay', 'Decay', 0, 1, 0.5), k('tone', 'Tone', 0, 1, 0.5), k('drip', 'Drip', 0, 1, 0.5), k('mix', 'Mix', 0, 1, 0.3)] },
     cloud: { name: 'Aroma Cloud', kind: 'Granular texture', cat: 5, ink: 'gold', knobs: [k('position', 'Position', 0, 1, 0.1), k('size', 'Grain', 20, 500, 140, ms), k('density', 'Density', 1, 60, 14, { curve: 'exp', unit: '/s' }), k('pitch', 'Pitch', -12, 12, 0, { int: true, unit: 'st' }), k('shimmer', 'Shimmer', 0, 1, 0.2), k('spray', 'Spray', 0, 1, 0.2), k('reverse', 'Reverse', 0, 1, 0.2), k('feedback', 'Feedback', 0, 0.95, 0.3), ke('freeze', 'Freeze', ['Off', 'On'], 0), k('mix', 'Mix', 0, 1, 0.45)] },
-    looper: { name: 'Loop Station', kind: 'Looper', cat: 5, ink: 'red', knobs: [k('level', 'Loop level', 0, 1.2, 0.9)], looper: true },
+    looper: { name: 'Loop Station', kind: 'Looper', cat: 5, ink: 'red', knobs: [k('level', 'Loop level', 0, 1.2, 0.9), k('feedback', 'Feedback', 0.3, 1, 1)], looper: true },
   };
   function fxDefaults(type) { const p = {}; for (const kk of FX[type].knobs) p[kk.k] = kk.vals ? kk.vals[kk.def] : kk.def; return p; }
   return { P, BYID, INIT, FX, CATS, fxDefaults, SYNC, DLY, WAVES, WARPS, SRCS, DSTS, AROMAS, EP, FILT };
