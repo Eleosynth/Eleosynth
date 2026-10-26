@@ -1,0 +1,36 @@
+# Attach a prebuilt, release-signed Android APK to an existing release.
+# Used while the signing key isn't stored as repository secrets: the signed APK is pushed to the
+# `apk` branch as Eleosynth-<version>.apk, then this workflow is started from the Actions tab with the tag.
+name: Attach APK
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to attach the APK to, e.g. v0.2.0'
+        required: true
+permissions:
+  contents: write
+jobs:
+  attach:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      TAG: ${{ github.event.inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: apk
+      - name: Check the APK
+        run: |
+          V=${TAG#v}; F="Eleosynth-$V.apk"
+          [ -f "$F" ] || { echo "::error::$F is not on the apk branch"; exit 1; }
+          sha256sum "$F"
+          echo "F=$F" >> "$GITHUB_ENV"
+      - name: Upload to the release and update the checksums
+        run: |
+          gh release upload "$TAG" "$F" --clobber --repo "$GITHUB_REPOSITORY"
+          gh release download "$TAG" --pattern SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --clobber || touch SHA256SUMS.txt
+          grep -v " $F\$" SHA256SUMS.txt > sums.tmp || true
+          sha256sum "$F" >> sums.tmp && sort -k2 sums.tmp > SHA256SUMS.txt && cat SHA256SUMS.txt
+          gh release upload "$TAG" SHA256SUMS.txt --clobber --repo "$GITHUB_REPOSITORY"
