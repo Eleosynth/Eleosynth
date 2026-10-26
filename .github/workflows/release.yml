@@ -31,13 +31,18 @@ jobs:
         with:
           node-version: 22
       - name: Packaging tools (NSIS, HFS+, Android SDK)
-        timeout-minutes: 15
+        timeout-minutes: 25
         run: |
-          # retry stalled mirror downloads instead of hanging
+          # Ubuntu mirrors sometimes stall mid-download: give each attempt 6 minutes and try up to three times
           echo 'Acquire::Retries "5"; Acquire::http::Timeout "30"; Acquire::https::Timeout "30";' | sudo tee /etc/apt/apt.conf.d/80-retries >/dev/null
-          sudo apt-get update
-          sudo apt-get install -y nsis hfsprogs cmake zlib1g-dev libbz2-dev libssl-dev zip \
-            aapt apksigner zipalign dalvik-exchange libandroid-23-java openjdk-21-jdk-headless
+          PKGS="nsis hfsprogs cmake zlib1g-dev libbz2-dev libssl-dev zip aapt apksigner zipalign dalvik-exchange libandroid-23-java openjdk-21-jdk-headless"
+          for attempt in 1 2 3; do
+            sudo timeout 120 apt-get update || true
+            if sudo timeout 360 apt-get install -y $PKGS; then exit 0; fi
+            echo "::warning::Package install attempt $attempt stalled or failed; retrying"
+            sudo pkill -9 apt-get || true; sudo dpkg --configure -a || true
+          done
+          exit 1
       - name: Disk image tools (libdmg-hfsplus)
         run: |
           mkdir -p "$RUNNER_TEMP/t" && cd "$RUNNER_TEMP/t"
